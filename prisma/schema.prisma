@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/lib/server/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Better Auth ---
+
+model User {
+  id            String   @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  sessions        Session[]
+  accounts        Account[]
+  bills           Bill[]
+  budgets         MonthBudget[]
+  bankConnections BankConnection[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  issuer                String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// --- Billkeeper ---
+
+model Bill {
+  id              Int       @id @default(autoincrement())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  dueDay          Int? // day of the month, 1-31
+  isAutoPay       Boolean   @default(false)
+  minPaymentCents Int?
+  payUrl          String? // https link to the biller's payment page
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  payments        Payment[]
+
+  @@index([userId])
+}
+
+model Payment {
+  id        Int       @id @default(autoincrement())
+  billId    Int
+  bill      Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
+  month     String // "YYYY-MM"
+  paid      Boolean   @default(false)
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([billId, month])
+  @@index([month])
+}
+
+model MonthBudget {
+  id           Int    @id @default(autoincrement())
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month        String // "YYYY-MM"
+  balanceCents Int    @default(0)
+
+  @@unique([userId, month])
+}
+
+// Seam for read-only bank sync (Teller/SimpleFIN). See docs/bank-sync.md.
+model BankConnection {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  String // "teller" | "simplefin"
+  status    String   @default("disconnected")
+  secret    String? // provider access material
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, provider])
+}
