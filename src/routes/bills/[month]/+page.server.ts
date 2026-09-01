@@ -3,14 +3,7 @@ import { env } from '$env/dynamic/private';
 import { isMonth } from '$lib/domain/month';
 import { parseMoney } from '$lib/domain/money';
 import { parseBillForm } from '$lib/domain/validation';
-import {
-	connectSimplefin,
-	disconnectBank,
-	getConnection,
-	listBankAccounts,
-	listSyncedAccounts,
-	setBankAccount
-} from '$lib/server/banksync';
+import { getConnection, listSyncedAccounts } from '$lib/server/banksync';
 import { resetBalanceFromBank, syncMonth } from '$lib/server/banksync/sync';
 import * as bills from '$lib/server/bills';
 import type { Actions, PageServerLoad } from './$types';
@@ -101,47 +94,6 @@ export const actions: Actions = {
 		const paid = form.get('paid') === 'true';
 		if (!Number.isInteger(billId)) return invalidBill('setPaid');
 		await bills.setPaid(user.id, billId, month, paid);
-	},
-
-	connectBank: async ({ locals, request }) => {
-		const user = requireUser(locals);
-		const form = await request.formData();
-		const setupToken = String(form.get('setupToken') ?? '').trim();
-		if (!setupToken) {
-			return fail(400, {
-				intent: 'connectBank',
-				errors: { setupToken: 'Paste a setup token' } as FormErrors
-			});
-		}
-		try {
-			await connectSimplefin(user.id, setupToken);
-		} catch (e) {
-			const message = e instanceof Error ? e.message : 'Could not connect';
-			return fail(400, { intent: 'connectBank', errors: { setupToken: message } as FormErrors });
-		}
-	},
-
-	disconnectBank: async ({ locals }) => {
-		const user = requireUser(locals);
-		await disconnectBank(user.id);
-	},
-
-	listBankAccounts: async ({ locals }) => {
-		const user = requireUser(locals);
-		try {
-			return { intent: 'listBankAccounts', accounts: await listBankAccounts(user.id) };
-		} catch (e) {
-			const message = e instanceof Error ? e.message : 'Could not load accounts';
-			return fail(400, { intent: 'listBankAccounts', errors: { sync: message } as FormErrors });
-		}
-	},
-
-	setBankAccount: async ({ locals, request }) => {
-		const user = requireUser(locals);
-		const form = await request.formData();
-		const accountId = String(form.get('accountId') ?? '');
-		const accountName = String(form.get('accountName') ?? '');
-		await setBankAccount(user.id, accountId ? { id: accountId, name: accountName } : null);
 	},
 
 	syncBank: async ({ locals, params }) => {

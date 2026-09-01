@@ -1,6 +1,6 @@
 <script lang="ts">
-	import BankSyncCard from '$lib/components/BankSyncCard.svelte';
 	import BillForm from '$lib/components/BillForm.svelte';
+	import SyncPanel from '$lib/components/SyncPanel.svelte';
 	import BillRow from '$lib/components/BillRow.svelte';
 	import MonthPicker from '$lib/components/MonthPicker.svelte';
 	import SummaryBar from '$lib/components/SummaryBar.svelte';
@@ -41,18 +41,11 @@
 	const createErrors = $derived(form?.intent === 'create' ? (form.errors ?? null) : null);
 	const updateErrors = $derived(form?.intent === 'update' ? (form.errors ?? null) : null);
 	const balanceError = $derived(form?.intent === 'budget' ? form.errors?.balance : undefined);
-	const bankErrors = $derived(
-		form?.intent === 'connectBank' ||
-			form?.intent === 'syncBank' ||
-			form?.intent === 'listBankAccounts'
-			? (form.errors ?? null)
-			: null
+	const syncError = $derived(
+		form?.intent === 'syncBank' && 'errors' in form ? (form.errors?.sync ?? null) : null
 	);
 	const syncOutcome = $derived(
 		form?.intent === 'syncBank' && 'sync' in form ? (form.sync ?? null) : null
-	);
-	const bankAccounts = $derived(
-		form?.intent === 'listBankAccounts' && 'accounts' in form ? (form.accounts ?? null) : null
 	);
 	const amountErrorFor = (billId: number) =>
 		form?.intent === 'setAmount' && 'billId' in form && form.billId === billId
@@ -75,7 +68,12 @@
 />
 
 {#if !data.isDemo}
-	<BankSyncCard bank={data.bank} sync={syncOutcome} accounts={bankAccounts} errors={bankErrors} />
+	<SyncPanel
+		connected={data.bank !== null}
+		lastSyncedAt={data.bank?.lastSyncedAt ?? null}
+		sync={syncOutcome}
+		error={syncError}
+	/>
 {/if}
 
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">

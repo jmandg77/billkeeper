@@ -4,6 +4,27 @@
 	import { formatCents } from '$lib/domain/money';
 
 	let { data, form } = $props();
+
+	let showConnect = $state(false);
+
+	const lastSynced = $derived(
+		data.bank?.lastSyncedAt
+			? new Date(data.bank.lastSyncedAt).toLocaleString('en-US', {
+					month: 'short',
+					day: 'numeric',
+					hour: 'numeric',
+					minute: '2-digit'
+				})
+			: null
+	);
+	const bankAccounts = $derived(
+		form?.intent === 'listBankAccounts' && 'accounts' in form ? (form.accounts ?? null) : null
+	);
+	const bankError = $derived(
+		(form?.intent === 'connectBank' || form?.intent === 'listBankAccounts') && 'error' in form
+			? form.error
+			: null
+	);
 </script>
 
 <svelte:head><title>Settings — billkeeper</title></svelte:head>
@@ -15,6 +36,109 @@
 	</div>
 
 	<div class="rounded-lg border border-gray-200 bg-white p-5">
+		<h2 class="font-semibold">Bank sync</h2>
+		{#if !data.bank}
+			<p class="mt-1 text-sm text-gray-500">
+				Connect your checking account via
+				<a
+					href="https://beta-bridge.simplefin.org"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="text-indigo-600 underline">SimpleFIN Bridge</a
+				>
+				and paid bills get detected automatically. Read-only; revocable there anytime.
+			</p>
+			{#if !showConnect}
+				<button
+					onclick={() => (showConnect = true)}
+					class="mt-3 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
+				>
+					Connect bank
+				</button>
+			{:else}
+				<form method="POST" action="?/connectBank" class="mt-3 flex flex-wrap gap-2" use:enhance>
+					<input
+						name="setupToken"
+						placeholder="Paste your SimpleFIN setup token"
+						class="min-w-64 flex-1 rounded-md border-gray-300 text-sm"
+						autocomplete="off"
+					/>
+					<button
+						class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+					>
+						Connect
+					</button>
+				</form>
+			{/if}
+		{:else}
+			<div class="mt-1 flex flex-wrap items-center justify-between gap-3">
+				<div class="text-sm text-gray-500">
+					<p class="font-medium text-gray-900">
+						{data.bank.institutions.length > 0 ? data.bank.institutions.join(' · ') : 'Bank'} connected
+						<span class="ml-1 inline-block h-2 w-2 rounded-full bg-green-500"></span>
+					</p>
+					{lastSynced ? `Last synced ${lastSynced}` : 'Not synced yet'}
+					&middot; sync refreshes every account &middot; payments matched from
+					<strong>{data.bank.accountName ?? 'all accounts'}</strong>
+					<form method="POST" action="?/listBankAccounts" class="inline" use:enhance>
+						<button class="text-indigo-600 underline">change</button>
+					</form>
+				</div>
+				<form
+					method="POST"
+					action="?/disconnectBank"
+					use:enhance
+					onsubmit={(e) => {
+						if (!confirm('Disconnect your bank? You can reconnect with a new setup token.')) {
+							e.preventDefault();
+						}
+					}}
+				>
+					<button class="rounded-md px-2 py-1.5 text-sm text-red-600 hover:bg-red-50">
+						Disconnect
+					</button>
+				</form>
+			</div>
+			{#if bankAccounts}
+				<form
+					method="POST"
+					action="?/setBankAccount"
+					class="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 text-sm"
+					use:enhance
+				>
+					<label for="bank-account" class="text-gray-600">Match bills against</label>
+					<select
+						id="bank-account"
+						name="accountId"
+						class="rounded-md border-gray-300 text-sm"
+						onchange={(e) => {
+							const option = e.currentTarget.selectedOptions[0];
+							const nameInput = e.currentTarget.form?.elements.namedItem('accountName');
+							if (nameInput instanceof HTMLInputElement) nameInput.value = option?.text ?? '';
+						}}
+					>
+						<option value="">All accounts</option>
+						{#each bankAccounts as account (account.id)}
+							<option value={account.id} selected={account.id === data.bank.accountId}>
+								{account.name}
+							</option>
+						{/each}
+					</select>
+					<input type="hidden" name="accountName" value={data.bank.accountName ?? ''} />
+					<button
+						class="rounded-md bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-500"
+					>
+						Save
+					</button>
+				</form>
+			{/if}
+		{/if}
+		{#if bankError}
+			<p class="mt-2 text-sm text-red-600">{bankError}</p>
+		{/if}
+	</div>
+
+	<div class="mt-6 rounded-lg border border-gray-200 bg-white p-5">
 		<h2 class="font-semibold">Due reminders</h2>
 		<p class="mt-1 text-sm text-gray-500">
 			Bills with a &ldquo;remind me&rdquo; setting send an email that many days before their due
