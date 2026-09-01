@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { paidCents, remainingCents, sortBills, totalCents, unpaidCents } from './bills';
+import {
+	paidCents,
+	remainingCents,
+	sortBills,
+	splitSections,
+	totalCents,
+	unpaidCents
+} from './bills';
 
 const bill = (
 	title: string,
@@ -20,16 +27,13 @@ const bill = (
 });
 
 describe('sortBills', () => {
-	it('orders unpaid manual, unpaid autopay, then paid', () => {
-		const sorted = sortBills([
-			bill('paid', { paid: true }),
-			bill('auto', { isAutoPay: true }),
-			bill('manual')
-		]);
-		expect(sorted.map((b) => b.title)).toEqual(['manual', 'auto', 'paid']);
+	it('sinks paid bills below unpaid regardless of mode', () => {
+		const input = [bill('paid-early', { paid: true, dueDay: 1 }), bill('unpaid', { dueDay: 20 })];
+		expect(sortBills(input, 'dueDate').map((b) => b.title)).toEqual(['unpaid', 'paid-early']);
+		expect(sortBills(input, 'alpha').map((b) => b.title)).toEqual(['unpaid', 'paid-early']);
 	});
 
-	it('orders by due day within a group, bills without a due day last', () => {
+	it('orders by due day, bills without a due day last', () => {
 		const sorted = sortBills([
 			bill('no-due'),
 			bill('late', { dueDay: 25 }),
@@ -38,15 +42,35 @@ describe('sortBills', () => {
 		expect(sorted.map((b) => b.title)).toEqual(['early', 'late', 'no-due']);
 	});
 
-	it('falls back to title', () => {
+	it('breaks due-day ties by title', () => {
 		const sorted = sortBills([bill('b', { dueDay: 1 }), bill('a', { dueDay: 1 })]);
 		expect(sorted.map((b) => b.title)).toEqual(['a', 'b']);
+	});
+
+	it('sorts alphabetically ignoring due days in alpha mode', () => {
+		const sorted = sortBills(
+			[bill('zebra', { dueDay: 1 }), bill('apple', { dueDay: 28 })],
+			'alpha'
+		);
+		expect(sorted.map((b) => b.title)).toEqual(['apple', 'zebra']);
 	});
 
 	it('does not mutate the input', () => {
 		const input = [bill('b'), bill('a')];
 		sortBills(input);
 		expect(input.map((b) => b.title)).toEqual(['b', 'a']);
+	});
+});
+
+describe('splitSections', () => {
+	it('separates manual and autopay bills preserving order', () => {
+		const { manual, autopay } = splitSections([
+			bill('a', { isAutoPay: true }),
+			bill('m1'),
+			bill('m2')
+		]);
+		expect(manual.map((b) => b.title)).toEqual(['m1', 'm2']);
+		expect(autopay.map((b) => b.title)).toEqual(['a']);
 	});
 });
 

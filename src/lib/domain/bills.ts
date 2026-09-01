@@ -10,16 +10,30 @@ export type BillView = {
 	paidAt: string | null;
 };
 
-// Unpaid manual bills first (most urgent), then unpaid autopay, then paid.
-// Within a group: earliest due day first (no due day last), then title.
-export function sortBills<T extends Pick<BillView, 'title' | 'isAutoPay' | 'dueDay' | 'paid'>>(
-	bills: T[]
+export type SortMode = 'dueDate' | 'alpha';
+
+// Paid bills sink to the bottom; above that, the chosen order — due day
+// (bills without one last) or title.
+export function sortBills<T extends Pick<BillView, 'title' | 'dueDay' | 'paid'>>(
+	bills: T[],
+	mode: SortMode = 'dueDate'
 ): T[] {
-	const rank = (b: T) => (b.paid ? 2 : 0) + (b.isAutoPay ? 1 : 0);
 	return [...bills].sort(
 		(a, b) =>
-			rank(a) - rank(b) || (a.dueDay ?? 32) - (b.dueDay ?? 32) || a.title.localeCompare(b.title)
+			Number(a.paid) - Number(b.paid) ||
+			(mode === 'dueDate' ? (a.dueDay ?? 32) - (b.dueDay ?? 32) : 0) ||
+			a.title.localeCompare(b.title)
 	);
+}
+
+// Bills the user pays by hand come first; autopay watches itself.
+export function splitSections<T extends Pick<BillView, 'isAutoPay'>>(
+	bills: T[]
+): { manual: T[]; autopay: T[] } {
+	return {
+		manual: bills.filter((b) => !b.isAutoPay),
+		autopay: bills.filter((b) => b.isAutoPay)
+	};
 }
 
 export function totalCents(bills: Pick<BillView, 'minPaymentCents'>[]): number {
