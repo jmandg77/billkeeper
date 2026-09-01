@@ -4,7 +4,8 @@ import { db } from '../db';
 import { claimSetupToken, fetchAccounts } from './simplefin';
 
 export type ConnectionSummary = {
-	institution: string | null;
+	// every institution seen through this connection, e.g. bank + card issuers
+	institutions: string[];
 	lastSyncedAt: string | null;
 	accountId: string | null;
 	accountName: string | null;
@@ -17,8 +18,18 @@ export async function getConnection(userId: string): Promise<ConnectionSummary |
 		where: { userId_provider: { userId, provider: 'simplefin' } }
 	});
 	if (!connection?.secret) return null;
+	const orgs = await db.bankAccount.findMany({
+		where: { userId, orgName: { not: null } },
+		distinct: ['orgName'],
+		select: { orgName: true },
+		orderBy: { orgName: 'asc' }
+	});
+	const institutions = orgs.map((o) => o.orgName!);
+	if (institutions.length === 0 && connection.institution) {
+		institutions.push(connection.institution);
+	}
 	return {
-		institution: connection.institution,
+		institutions,
 		lastSyncedAt: connection.lastSyncedAt?.toISOString() ?? null,
 		accountId: connection.accountId,
 		accountName: connection.accountName
@@ -76,6 +87,7 @@ export async function setBankAccount(
 export type SyncedAccount = {
 	accountId: string;
 	name: string;
+	orgName: string | null;
 	balanceCents: number;
 	syncedAt: string;
 };
@@ -89,6 +101,7 @@ export async function listSyncedAccounts(userId: string): Promise<SyncedAccount[
 	return accounts.map((a) => ({
 		accountId: a.accountId,
 		name: a.name,
+		orgName: a.orgName,
 		balanceCents: a.balanceCents,
 		syncedAt: a.syncedAt.toISOString()
 	}));

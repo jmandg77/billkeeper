@@ -45,10 +45,18 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 		const cents = amountToCents(account.balance);
 		if (cents === null) continue;
 		balances.set(account.id, cents);
+		const orgName = account.org?.name ?? account.org?.domain ?? null;
 		await db.bankAccount.upsert({
 			where: { userId_accountId: { userId, accountId: account.id } },
-			update: { name: account.name, balanceCents: cents, syncedAt },
-			create: { userId, accountId: account.id, name: account.name, balanceCents: cents, syncedAt }
+			update: { name: account.name, orgName, balanceCents: cents, syncedAt },
+			create: {
+				userId,
+				accountId: account.id,
+				name: account.name,
+				orgName,
+				balanceCents: cents,
+				syncedAt
+			}
 		});
 	}
 

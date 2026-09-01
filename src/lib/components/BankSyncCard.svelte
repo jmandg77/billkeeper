@@ -83,7 +83,7 @@
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<div>
 				<p class="font-medium">
-					{bank.institution ?? 'Bank'} connected
+					{bank.institutions.length > 0 ? bank.institutions.join(' · ') : 'Bank'} connected
 					<span class="ml-2 inline-block h-2 w-2 rounded-full bg-green-500"></span>
 				</p>
 				<div class="text-sm text-gray-500">

@@ -102,7 +102,7 @@
 				<option value="">Fixed amount</option>
 				{#each accounts as account (account.accountId)}
 					<option value={account.accountId} selected={account.accountId === bill?.linkedAccountId}>
-						{account.name}
+						{account.name}{account.orgName ? ` — ${account.orgName}` : ''}
 					</option>
 				{/each}
 			</select>

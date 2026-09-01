@@ -58,7 +58,12 @@
 			<ul class="mt-3 divide-y divide-gray-100">
 				{#each data.syncedAccounts as account (account.accountId)}
 					<li class="flex items-center justify-between py-2 text-sm">
-						<span>{account.name}</span>
+						<span>
+							{account.name}
+							{#if account.orgName}
+								<span class="text-xs text-gray-400">{account.orgName}</span>
+							{/if}
+						</span>
 						<span class="text-gray-600">
 							{formatCents(Math.abs(account.balanceCents))}
 							{#if account.balanceCents < 0}

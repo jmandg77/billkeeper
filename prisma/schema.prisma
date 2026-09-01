@@ -132,6 +132,7 @@ model BankAccount {
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name         String
+  orgName      String?
   balanceCents Int
   syncedAt     DateTime
 
