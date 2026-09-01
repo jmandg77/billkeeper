@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { currentMonth } from '$lib/domain/month';
 import { parseReminderEmails } from '$lib/domain/validation';
 import {
 	connectSimplefin,
@@ -9,6 +10,7 @@ import {
 	listSyncedAccounts,
 	setBankAccount
 } from '$lib/server/banksync';
+import { syncMonth } from '$lib/server/banksync/sync';
 import { db } from '$lib/server/db';
 import { getReminderEmails, setReminderEmails } from '$lib/server/notify';
 import type { Actions, PageServerLoad } from './$types';
@@ -81,6 +83,16 @@ export const actions: Actions = {
 			dataUserId(locals),
 			accountId ? { id: accountId, name: accountName } : null
 		);
+	},
+
+	syncBank: async ({ locals }) => {
+		requireUser(locals);
+		try {
+			return { intent: 'syncBank', sync: await syncMonth(dataUserId(locals), currentMonth()) };
+		} catch (e) {
+			const message = e instanceof Error ? e.message : 'Sync failed';
+			return fail(400, { intent: 'syncBank', error: message });
+		}
 	},
 
 	save: async ({ locals, request }) => {

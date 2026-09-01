@@ -21,10 +21,17 @@
 		form?.intent === 'listBankAccounts' && 'accounts' in form ? (form.accounts ?? null) : null
 	);
 	const bankError = $derived(
-		(form?.intent === 'connectBank' || form?.intent === 'listBankAccounts') && 'error' in form
+		(form?.intent === 'connectBank' ||
+			form?.intent === 'listBankAccounts' ||
+			form?.intent === 'syncBank') &&
+			'error' in form
 			? form.error
 			: null
 	);
+	const syncOutcome = $derived(
+		form?.intent === 'syncBank' && 'sync' in form ? (form.sync ?? null) : null
+	);
+	let syncing = $state(false);
 </script>
 
 <svelte:head><title>Settings — billkeeper</title></svelte:head>
@@ -84,21 +91,64 @@
 						<button class="text-indigo-600 underline">change</button>
 					</form>
 				</div>
-				<form
-					method="POST"
-					action="?/disconnectBank"
-					use:enhance
-					onsubmit={(e) => {
-						if (!confirm('Disconnect your bank? You can reconnect with a new setup token.')) {
-							e.preventDefault();
-						}
-					}}
-				>
-					<button class="rounded-md px-2 py-1.5 text-sm text-red-600 hover:bg-red-50">
-						Disconnect
-					</button>
-				</form>
+				<div class="flex items-center gap-2">
+					<form
+						method="POST"
+						action="?/syncBank"
+						use:enhance={() => {
+							syncing = true;
+							return async ({ update }) => {
+								syncing = false;
+								await update();
+							};
+						}}
+					>
+						<button
+							disabled={syncing}
+							class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+						>
+							{syncing ? 'Syncing…' : 'Sync now'}
+						</button>
+					</form>
+					<form
+						method="POST"
+						action="?/disconnectBank"
+						use:enhance
+						onsubmit={(e) => {
+							if (!confirm('Disconnect your bank? You can reconnect with a new setup token.')) {
+								e.preventDefault();
+							}
+						}}
+					>
+						<button class="rounded-md px-2 py-1.5 text-sm text-red-600 hover:bg-red-50">
+							Disconnect
+						</button>
+					</form>
+				</div>
 			</div>
+			{#if syncOutcome}
+				<div class="mt-3 space-y-1 border-t border-gray-100 pt-3 text-sm text-gray-600">
+					<p>
+						Refreshed {syncOutcome.accountsRefreshed}
+						{syncOutcome.accountsRefreshed === 1 ? 'account balance' : 'account balances'}.
+						{#if syncOutcome.balanceCents !== null}
+							Balance set to {formatCents(syncOutcome.balanceCents)} from your account.
+						{/if}
+					</p>
+					{#each syncOutcome.autoMarked as match (match.txnId)}
+						<p class="text-green-700">Marked <strong>{match.title}</strong> paid.</p>
+					{/each}
+					{#if syncOutcome.suggested.length > 0}
+						<p class="text-amber-800">
+							{syncOutcome.suggested.length} possible
+							{syncOutcome.suggested.length === 1 ? 'match' : 'matches'} —
+							<a href={resolve('/bills')} class="text-indigo-600 underline">
+								review on the bills page
+							</a>
+						</p>
+					{/if}
+				</div>
+			{/if}
 			{#if bankAccounts}
 				<form
 					method="POST"

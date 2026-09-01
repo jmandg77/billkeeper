@@ -31,11 +31,8 @@
 </script>
 
 <div class="mb-6">
-	<div class="flex items-center justify-end gap-3">
+	<div class="flex items-center justify-start gap-3">
 		{#if connected}
-			<span class="text-xs text-gray-400">
-				{lastSynced ? `Last synced ${lastSynced}` : 'Not synced yet'}
-			</span>
 			<form
 				method="POST"
 				action="?/syncBank"
@@ -54,6 +51,9 @@
 					{syncing ? 'Syncing…' : 'Sync linked accounts'}
 				</button>
 			</form>
+			<span class="text-xs text-gray-400">
+				{lastSynced ? `Last synced ${lastSynced}` : 'Not synced yet'}
+			</span>
 		{:else}
 			<a href={resolve('/settings')} class="text-sm text-indigo-600 underline">
 				Set up bank sync in Settings
@@ -62,7 +62,7 @@
 	</div>
 
 	{#if error}
-		<p class="mt-2 text-right text-sm text-red-600">{error}</p>
+		<p class="mt-2 text-sm text-red-600">{error}</p>
 	{/if}
 
 	{#if sync}
