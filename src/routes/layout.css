@@ -1,2 +1,14 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
+
+/* Tailwind 4 preflight sets cursor: default on buttons; restore pointer for
+   everything clickable. */
+@layer base {
+	button:not(:disabled),
+	[role='button']:not(:disabled),
+	select:not(:disabled),
+	input[type='checkbox']:not(:disabled),
+	label:has(> input[type='checkbox']:not(:disabled)) {
+		cursor: pointer;
+	}
+}
