@@ -31,10 +31,28 @@ export const billInputSchema = z.object({
 			.regex(/^https?:\/\//, 'URL must start with http:// or https://')
 			.max(2000)
 			.optional()
+	),
+	notifyDaysBefore: z.preprocess(
+		emptyToUndefined,
+		z.coerce.number().int().min(0, 'Days must be 0-28').max(28, 'Days must be 0-28').optional()
 	)
 });
 
 export type BillInput = z.infer<typeof billInputSchema>;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// One address per line or comma-separated; carrier text gateways are emails too.
+export function parseReminderEmails(raw: string): { emails: string[] } | { error: string } {
+	const emails = raw
+		.split(/[\n,]/)
+		.map((e) => e.trim())
+		.filter(Boolean);
+	if (emails.length > 5) return { error: 'At most 5 addresses' };
+	const bad = emails.find((e) => !EMAIL_RE.test(e));
+	if (bad) return { error: `"${bad}" doesn't look like an email address` };
+	return { emails };
+}
 
 export function parseBillForm(form: FormData) {
 	const result = billInputSchema.safeParse({
@@ -42,7 +60,8 @@ export function parseBillForm(form: FormData) {
 		dueDay: form.get('dueDay'),
 		isAutoPay: form.get('isAutoPay'),
 		minPayment: form.get('minPayment'),
-		payUrl: form.get('payUrl')
+		payUrl: form.get('payUrl'),
+		notifyDaysBefore: form.get('notifyDaysBefore')
 	});
 	if (result.success) return { data: result.data, errors: null };
 	const errors: Record<string, string> = {};

@@ -22,13 +22,14 @@ export async function listMonth(userId: string, month: string): Promise<BillView
 			isAutoPay: bill.isAutoPay,
 			minPaymentCents: bill.minPaymentCents,
 			payUrl: bill.payUrl,
+			notifyDaysBefore: bill.notifyDaysBefore,
 			paid: payment?.paid ?? false,
 			paidAt: payment?.paidAt?.toISOString() ?? null
 		};
 	});
 }
 
-async function ensureMonthSeeded(userId: string, month: string): Promise<void> {
+export async function ensureMonthSeeded(userId: string, month: string): Promise<void> {
 	if (month > currentMonth()) return; // don't materialize future months on view
 	const existing = await db.payment.count({ where: { month, bill: { userId } } });
 	if (existing > 0) return;
@@ -65,6 +66,7 @@ export async function createBill(userId: string, month: string, input: BillInput
 			isAutoPay: input.isAutoPay,
 			minPaymentCents: input.minPayment ?? null,
 			payUrl: input.payUrl ?? null,
+			notifyDaysBefore: input.notifyDaysBefore ?? null,
 			payments: { create: { month } }
 		}
 	});
@@ -78,7 +80,8 @@ export async function updateBill(userId: string, billId: number, input: BillInpu
 			dueDay: input.dueDay ?? null,
 			isAutoPay: input.isAutoPay,
 			minPaymentCents: input.minPayment ?? null,
-			payUrl: input.payUrl ?? null
+			payUrl: input.payUrl ?? null,
+			notifyDaysBefore: input.notifyDaysBefore ?? null
 		}
 	});
 }

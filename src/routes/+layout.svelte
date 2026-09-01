@@ -32,6 +32,11 @@
 							Demo — data resets on each demo sign-in
 						</span>
 					{/if}
+					{#if !data.isDemo}
+						<a href={resolve('/settings')} class="text-sm text-gray-600 hover:text-indigo-600">
+							Settings
+						</a>
+					{/if}
 					<span class="hidden text-sm text-gray-600 sm:inline">{data.user.name}</span>
 					<button
 						onclick={signOut}

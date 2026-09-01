@@ -5,6 +5,7 @@ export type BillView = {
 	isAutoPay: boolean;
 	minPaymentCents: number | null;
 	payUrl: string | null;
+	notifyDaysBefore: number | null;
 	paid: boolean;
 	paidAt: string | null;
 };

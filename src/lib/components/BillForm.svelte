@@ -88,6 +88,25 @@
 		{#if errors?.payUrl}<p class="mt-1 text-xs text-red-600">{errors.payUrl}</p>{/if}
 	</div>
 
+	<div>
+		<label class="block text-sm font-medium" for="notifyDaysBefore">
+			Remind me (days before due)
+		</label>
+		<input
+			id="notifyDaysBefore"
+			name="notifyDaysBefore"
+			type="number"
+			min="0"
+			max="28"
+			value={bill?.notifyDaysBefore ?? ''}
+			class="mt-1 w-full rounded-md border-gray-300 text-sm"
+			placeholder="off"
+		/>
+		{#if errors?.notifyDaysBefore}
+			<p class="mt-1 text-xs text-red-600">{errors.notifyDaysBefore}</p>
+		{/if}
+	</div>
+
 	<label class="flex items-center gap-2 text-sm">
 		<input
 			type="checkbox"

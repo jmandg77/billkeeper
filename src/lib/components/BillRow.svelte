@@ -37,6 +37,12 @@
 				{#if bill.isAutoPay}
 					&middot; <span class="text-indigo-600">autopay</span>
 				{/if}
+				{#if bill.notifyDaysBefore !== null && bill.dueDay}
+					&middot;
+					<span title="Reminder {bill.notifyDaysBefore} day(s) before due">
+						&#128276; {bill.notifyDaysBefore}d
+					</span>
+				{/if}
 			</p>
 		</div>
 	</div>

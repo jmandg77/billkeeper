@@ -56,9 +56,19 @@
 					name="balance"
 					value={centsToInput(budget.balanceCents)}
 					class="w-28 rounded-md border-gray-300 text-sm"
+					onkeydown={(e) => {
+						if (e.key === 'Escape') editingBalance = false;
+					}}
 				/>
 				<button class="rounded-md bg-indigo-600 px-2 py-1 text-sm text-white hover:bg-indigo-500">
 					Save
+				</button>
+				<button
+					type="button"
+					onclick={() => (editingBalance = false)}
+					class="rounded-md border border-gray-300 px-2 py-1 text-sm hover:bg-gray-100"
+				>
+					Cancel
 				</button>
 			</form>
 		{:else}
