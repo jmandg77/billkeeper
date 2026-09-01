@@ -93,13 +93,14 @@ model Bill {
 }
 
 model Payment {
-  id        Int       @id @default(autoincrement())
-  billId    Int
-  bill      Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
-  month     String // "YYYY-MM"
-  paid      Boolean   @default(false)
-  paidAt    DateTime?
-  createdAt DateTime  @default(now())
+  id           Int       @id @default(autoincrement())
+  billId       Int
+  bill         Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
+  month        String // "YYYY-MM"
+  paid         Boolean   @default(false)
+  paidAt       DateTime?
+  matchedTxnId String? // bank transaction that marked this paid, when synced
+  createdAt    DateTime  @default(now())
 
   @@unique([billId, month])
   @@index([month])
@@ -115,16 +116,20 @@ model MonthBudget {
   @@unique([userId, month])
 }
 
-// Seam for read-only bank sync (Teller/SimpleFIN). See docs/bank-sync.md.
+// Read-only bank sync (Teller first; SimpleFIN fits the same seam). See docs/bank-sync.md.
 model BankConnection {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider  String // "teller" | "simplefin"
-  status    String   @default("disconnected")
-  secret    String? // provider access material
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int       @id @default(autoincrement())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String // "teller" | "simplefin"
+  status       String    @default("connected")
+  secret       String? // provider access material (Teller: enrollment access token)
+  enrollmentId String?
+  institution  String?
+  accountId    String? // provider account the bills are paid from
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@unique([userId, provider])
 }

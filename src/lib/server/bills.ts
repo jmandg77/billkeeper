@@ -97,8 +97,22 @@ export async function setPaid(
 	if (!bill) throw new Error('Bill not found');
 	await db.payment.upsert({
 		where: { billId_month: { billId, month } },
-		update: { paid, paidAt: paid ? new Date() : null },
+		update: { paid, paidAt: paid ? new Date() : null, matchedTxnId: paid ? undefined : null },
 		create: { billId, month, paid, paidAt: paid ? new Date() : null }
+	});
+}
+
+export async function acceptTxnMatch(
+	userId: string,
+	billId: number,
+	month: string,
+	txnId: string
+): Promise<void> {
+	const bill = await db.bill.findUnique({ where: { id: billId, userId }, select: { id: true } });
+	if (!bill) throw new Error('Bill not found');
+	await db.payment.update({
+		where: { billId_month: { billId, month } },
+		data: { paid: true, paidAt: new Date(), matchedTxnId: txnId }
 	});
 }
 

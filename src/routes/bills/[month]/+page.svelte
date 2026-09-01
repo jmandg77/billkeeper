@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BankSyncCard from '$lib/components/BankSyncCard.svelte';
 	import BillForm from '$lib/components/BillForm.svelte';
 	import BillRow from '$lib/components/BillRow.svelte';
 	import MonthPicker from '$lib/components/MonthPicker.svelte';
@@ -14,6 +15,12 @@
 	const createErrors = $derived(form?.intent === 'create' ? (form.errors ?? null) : null);
 	const updateErrors = $derived(form?.intent === 'update' ? (form.errors ?? null) : null);
 	const balanceError = $derived(form?.intent === 'budget' ? form.errors?.balance : undefined);
+	const bankErrors = $derived(
+		form?.intent === 'connectBank' || form?.intent === 'syncBank' ? (form.errors ?? null) : null
+	);
+	const syncOutcome = $derived(
+		form?.intent === 'syncBank' && 'sync' in form ? (form.sync ?? null) : null
+	);
 </script>
 
 <svelte:head><title>Bills — {formatMonth(data.month)}</title></svelte:head>
@@ -24,6 +31,10 @@
 </div>
 
 <SummaryBar bills={data.bills} budgetCents={data.budgetCents} {balanceError} />
+
+{#if !data.isDemo}
+	<BankSyncCard bank={data.bank} sync={syncOutcome} errors={bankErrors} />
+{/if}
 
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
 	<div class="lg:col-span-1">
