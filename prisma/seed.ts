@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/lib/server/generated/client';
