@@ -9,10 +9,14 @@ import { db } from './db';
 
 export async function listMonth(userId: string, month: string): Promise<BillView[]> {
 	await ensureMonthSeeded(userId, month);
-	const bills = await db.bill.findMany({
-		where: { userId, payments: { some: { month } } },
-		include: { payments: { where: { month } } }
-	});
+	const [bills, accounts] = await Promise.all([
+		db.bill.findMany({
+			where: { userId, payments: { some: { month } } },
+			include: { payments: { where: { month } } }
+		}),
+		db.bankAccount.findMany({ where: { userId }, select: { accountId: true, balanceCents: true } })
+	]);
+	const balances = new Map(accounts.map((a) => [a.accountId, a.balanceCents]));
 	return bills.map((bill) => {
 		const payment = bill.payments[0];
 		return {
@@ -24,6 +28,8 @@ export async function listMonth(userId: string, month: string): Promise<BillView
 			payUrl: bill.payUrl,
 			notifyDaysBefore: bill.notifyDaysBefore,
 			linkedAccountId: bill.linkedAccountId,
+			linkedBalanceCents:
+				bill.linkedAccountId !== null ? (balances.get(bill.linkedAccountId) ?? null) : null,
 			paid: payment?.paid ?? false,
 			paidAt: payment?.paidAt?.toISOString() ?? null
 		};
@@ -83,7 +89,18 @@ export async function createBill(userId: string, month: string, input: BillInput
 	});
 }
 
-export async function updateBill(userId: string, billId: number, input: BillInput): Promise<void> {
+export async function updateBill(
+	userId: string,
+	billId: number,
+	month: string,
+	input: BillInput
+): Promise<void> {
+	const before = await db.bill.findUnique({
+		where: { id: billId, userId },
+		select: { minPaymentCents: true }
+	});
+	if (!before) throw new Error('Bill not found');
+	const linkedAccountId = await resolveLinkedAccount(userId, input.linkedAccountId);
 	await db.bill.update({
 		where: { id: billId, userId },
 		data: {
@@ -93,9 +110,35 @@ export async function updateBill(userId: string, billId: number, input: BillInpu
 			minPaymentCents: input.minPayment ?? null,
 			payUrl: input.payUrl ?? null,
 			notifyDaysBefore: input.notifyDaysBefore ?? null,
-			linkedAccountId: await resolveLinkedAccount(userId, input.linkedAccountId)
+			linkedAccountId
 		}
 	});
+	if (linkedAccountId && input.minPayment != null && input.minPayment !== before.minPaymentCents) {
+		await markAmountOverridden(billId, month);
+	}
+}
+
+// Hold a manually chosen amount for the rest of the month on linked bills.
+async function markAmountOverridden(billId: number, month: string): Promise<void> {
+	await db.payment.updateMany({
+		where: { billId, month },
+		data: { amountOverriddenAt: new Date() }
+	});
+}
+
+export async function setBillAmount(
+	userId: string,
+	billId: number,
+	month: string,
+	amountCents: number
+): Promise<void> {
+	const bill = await db.bill.findUnique({
+		where: { id: billId, userId },
+		select: { linkedAccountId: true }
+	});
+	if (!bill) throw new Error('Bill not found');
+	await db.bill.update({ where: { id: billId }, data: { minPaymentCents: amountCents } });
+	if (bill.linkedAccountId) await markAmountOverridden(billId, month);
 }
 
 export async function deleteBill(userId: string, billId: number): Promise<void> {

@@ -1,9 +1,15 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { BillView } from '$lib/domain/bills';
-	import { formatCents } from '$lib/domain/money';
+	import { centsToInput, formatCents } from '$lib/domain/money';
 
-	let { bill, onedit }: { bill: BillView; onedit: (bill: BillView) => void } = $props();
+	let {
+		bill,
+		amountError,
+		onedit
+	}: { bill: BillView; amountError?: string; onedit: (bill: BillView) => void } = $props();
+
+	let editingAmount = $state(false);
 </script>
 
 <li
@@ -48,11 +54,55 @@
 	</div>
 
 	<div class="flex shrink-0 items-center gap-3">
-		{#if bill.minPaymentCents !== null}
-			<span class="font-semibold {bill.paid ? 'text-gray-400' : ''}">
-				{formatCents(bill.minPaymentCents)}
-			</span>
-		{/if}
+		<div class="text-right">
+			{#if editingAmount && !bill.paid}
+				<form
+					method="POST"
+					action="?/setAmount"
+					class="flex items-center gap-1"
+					use:enhance={() =>
+						async ({ result, update }) => {
+							if (result.type === 'success') editingAmount = false;
+							await update();
+						}}
+				>
+					<input type="hidden" name="billId" value={bill.id} />
+					<!-- svelte-ignore a11y_autofocus -->
+					<input
+						name="amount"
+						value={centsToInput(bill.minPaymentCents)}
+						class="w-24 rounded-md border-gray-300 text-right text-sm"
+						autofocus
+						onkeydown={(e) => {
+							if (e.key === 'Escape') editingAmount = false;
+						}}
+					/>
+					<button class="rounded-md bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-500">
+						Save
+					</button>
+				</form>
+			{:else if bill.paid}
+				{#if bill.minPaymentCents !== null}
+					<span class="font-semibold text-gray-400">{formatCents(bill.minPaymentCents)}</span>
+				{/if}
+			{:else}
+				<button
+					class="font-semibold hover:text-indigo-600"
+					title="Edit amount"
+					onclick={() => (editingAmount = true)}
+				>
+					{bill.minPaymentCents !== null ? formatCents(bill.minPaymentCents) : 'Set amount'}
+				</button>
+			{/if}
+			{#if amountError && !bill.paid}
+				<p class="text-xs text-red-600">{amountError}</p>
+			{/if}
+			{#if bill.linkedBalanceCents !== null}
+				<p class="text-xs text-gray-400" title="Current account balance from last sync">
+					bal {formatCents(Math.abs(bill.linkedBalanceCents))}
+				</p>
+			{/if}
+		</div>
 		{#if bill.payUrl}
 			<a
 				href={bill.payUrl}

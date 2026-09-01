@@ -107,7 +107,8 @@
 				{/each}
 			</select>
 			<p class="mt-1 text-xs text-gray-400">
-				Each bank sync sets this bill's amount to the account's balance while unpaid.
+				Sync keeps this bill's amount at the account balance while unpaid — until you set an amount
+				yourself, which holds for the rest of the month.
 			</p>
 		</div>
 	{/if}

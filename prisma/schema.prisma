@@ -106,6 +106,9 @@ model Payment {
   paidAt       DateTime?
   matchedTxnId String? // bank transaction that marked this paid, when synced
   notifiedAt   DateTime? // due-reminder sent for this month
+  // A manually set amount on a linked bill holds for this month; sync stops
+  // overwriting it until the next month starts fresh.
+  amountOverriddenAt DateTime?
   createdAt    DateTime  @default(now())
 
   @@unique([billId, month])

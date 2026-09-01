@@ -54,6 +54,10 @@
 	const bankAccounts = $derived(
 		form?.intent === 'listBankAccounts' && 'accounts' in form ? (form.accounts ?? null) : null
 	);
+	const amountErrorFor = (billId: number) =>
+		form?.intent === 'setAmount' && 'billId' in form && form.billId === billId
+			? form.errors?.amount
+			: undefined;
 </script>
 
 <svelte:head><title>Bills — {formatMonth(data.month)}</title></svelte:head>
@@ -127,7 +131,11 @@
 				</h3>
 				<ul class="space-y-3">
 					{#each section.bills as bill (bill.id)}
-						<BillRow {bill} onedit={(b) => (editingBill = b)} />
+						<BillRow
+							{bill}
+							amountError={amountErrorFor(bill.id)}
+							onedit={(b) => (editingBill = b)}
+						/>
 					{/each}
 				</ul>
 			{/each}
