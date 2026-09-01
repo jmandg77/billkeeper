@@ -8,6 +8,10 @@ declare global {
 				email: string;
 				image?: string | null;
 			} | null;
+			// The user whose data this session operates on: the signed-in user,
+			// or the household owner who shared access with them.
+			dataUserId: string | null;
+			sharedBy: string | null;
 		}
 	}
 }

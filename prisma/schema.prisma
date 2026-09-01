@@ -24,6 +24,7 @@ model User {
   budgets         MonthBudget[]
   bankConnections BankConnection[]
   settings        UserSettings?
+  shares          AccountShare[]
 
   @@unique([email])
   @@map("user")
@@ -120,6 +121,16 @@ model MonthBudget {
   balanceAsOf  DateTime?
 
   @@unique([userId, month])
+}
+
+// Household sharing: a session whose email matches a share operates on the
+// owner's data (bills, bank sync, reminder settings) instead of its own.
+model AccountShare {
+  id        Int      @id @default(autoincrement())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  email     String   @unique
+  createdAt DateTime @default(now())
 }
 
 model UserSettings {

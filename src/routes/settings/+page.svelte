@@ -33,10 +33,10 @@
 				class="w-full rounded-md border-gray-300 text-sm"
 				placeholder={data.loginEmail}>{data.reminderEmails.join('\n')}</textarea
 			>
-			{#if form?.error}
+			{#if form?.intent === 'save' && form?.error}
 				<p class="text-sm text-red-600">{form.error}</p>
 			{/if}
-			{#if form?.saved}
+			{#if form?.intent === 'save' && 'saved' in form}
 				<p class="text-sm text-green-700">Saved.</p>
 			{/if}
 			<button
@@ -45,5 +45,51 @@
 				Save
 			</button>
 		</form>
+	</div>
+
+	<div class="mt-6 rounded-lg border border-gray-200 bg-white p-5">
+		<h2 class="font-semibold">Household access</h2>
+		{#if data.sharedBy}
+			<p class="mt-1 text-sm text-gray-500">
+				You have shared access to <strong>{data.sharedBy}</strong>'s bills. Only they can manage who
+				has access.
+			</p>
+		{:else}
+			<p class="mt-1 text-sm text-gray-500">
+				People listed here see and manage <em>your</em> bills, bank sync, and reminders when they sign
+				in with the matching email (any sign-in method).
+			</p>
+
+			{#if data.shares.length > 0}
+				<ul class="mt-3 space-y-2">
+					{#each data.shares as share (share.id)}
+						<li class="flex items-center justify-between text-sm">
+							<span>{share.email}</span>
+							<form method="POST" action="?/removeShare" use:enhance>
+								<input type="hidden" name="shareId" value={share.id} />
+								<button class="rounded-md px-2 py-1 text-red-600 hover:bg-red-50">Remove</button>
+							</form>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+
+			<form method="POST" action="?/addShare" class="mt-3 flex flex-wrap gap-2" use:enhance>
+				<input
+					type="email"
+					name="email"
+					placeholder="partner@example.com"
+					class="min-w-64 flex-1 rounded-md border-gray-300 text-sm"
+				/>
+				<button
+					class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+				>
+					Share access
+				</button>
+			</form>
+			{#if form?.intent === 'share' && form?.error}
+				<p class="mt-2 text-sm text-red-600">{form.error}</p>
+			{/if}
+		{/if}
 	</div>
 </div>

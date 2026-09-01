@@ -37,6 +37,14 @@
 							Settings
 						</a>
 					{/if}
+					{#if data.sharedBy}
+						<span
+							class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs text-indigo-700"
+							title="You have shared access to this household's bills"
+						>
+							{data.sharedBy}'s bills
+						</span>
+					{/if}
 					<span class="hidden text-sm text-gray-600 sm:inline">{data.user.name}</span>
 					<button
 						onclick={signOut}

@@ -32,6 +32,14 @@ export const auth = betterAuth({
 		enabled: true,
 		disableSignUp: true
 	},
+	// The same person signing in via GitHub or Google (matching verified email)
+	// should land on one user, not two.
+	account: {
+		accountLinking: {
+			enabled: true,
+			trustedProviders: ['github', 'google']
+		}
+	},
 	socialProviders,
 	plugins: [sveltekitCookies(getRequestEvent)]
 });

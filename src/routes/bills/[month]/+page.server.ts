@@ -14,9 +14,11 @@ import { resetBalanceFromBank, syncMonth } from '$lib/server/banksync/sync';
 import * as bills from '$lib/server/bills';
 import type { Actions, PageServerLoad } from './$types';
 
+// Data access goes through the household's data user (the owner when this
+// session was invited via an AccountShare).
 function requireUser(locals: App.Locals) {
 	if (!locals.user) redirect(302, '/');
-	return locals.user;
+	return { id: locals.dataUserId ?? locals.user.id, email: locals.user.email };
 }
 
 function requireMonth(params: { month: string }) {
