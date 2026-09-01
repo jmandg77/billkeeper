@@ -107,11 +107,14 @@ model Payment {
 }
 
 model MonthBudget {
-  id           Int    @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   userId       String
-  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   month        String // "YYYY-MM"
-  balanceCents Int    @default(0)
+  balanceCents Int       @default(0)
+  // When the balance was set; only bills paid after this deduct from it,
+  // since earlier payments are already reflected in the number.
+  balanceAsOf  DateTime?
 
   @@unique([userId, month])
 }

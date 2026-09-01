@@ -175,6 +175,11 @@
 
 		{#if sync}
 			<div class="mt-3 space-y-2 border-t border-gray-100 pt-3">
+				{#if sync.balanceCents !== null}
+					<p class="text-sm text-gray-600">
+						Balance set to {formatCents(sync.balanceCents)} from your account.
+					</p>
+				{/if}
 				{#if sync.autoMarked.length === 0 && sync.suggested.length === 0}
 					<p class="text-sm text-gray-500">Synced — no new payments matched your unpaid bills.</p>
 				{/if}
@@ -193,6 +198,7 @@
 						<form method="POST" action="?/acceptMatch" use:enhance>
 							<input type="hidden" name="billId" value={match.billId} />
 							<input type="hidden" name="txnId" value={match.txnId} />
+							<input type="hidden" name="txnDate" value={match.date} />
 							<button
 								class="rounded-md border border-green-600 px-2.5 py-1 text-sm font-medium text-green-700 hover:bg-green-50"
 							>

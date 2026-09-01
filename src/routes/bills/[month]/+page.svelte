@@ -37,7 +37,12 @@
 	<MonthPicker month={data.month} months={data.months} />
 </div>
 
-<SummaryBar bills={data.bills} budgetCents={data.budgetCents} {balanceError} />
+<SummaryBar
+	bills={data.bills}
+	budget={data.budget}
+	canReset={data.bank?.accountId != null}
+	{balanceError}
+/>
 
 {#if !data.isDemo}
 	<BankSyncCard bank={data.bank} sync={syncOutcome} accounts={bankAccounts} errors={bankErrors} />

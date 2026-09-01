@@ -33,9 +33,15 @@ export function unpaidCents(bills: Pick<BillView, 'minPaymentCents' | 'paid'>[])
 	return totalCents(bills.filter((b) => !b.paid));
 }
 
+// Deducts bills paid after the balance snapshot; payments made before it are
+// already reflected in the balance itself.
 export function remainingCents(
 	balanceCents: number,
-	bills: Pick<BillView, 'minPaymentCents' | 'paid'>[]
+	balanceAsOf: string | null,
+	bills: Pick<BillView, 'minPaymentCents' | 'paid' | 'paidAt'>[]
 ): number {
-	return balanceCents - paidCents(bills);
+	const deductible = bills.filter(
+		(b) => b.paid && (!balanceAsOf || (b.paidAt !== null && b.paidAt > balanceAsOf))
+	);
+	return balanceCents - totalCents(deductible);
 }

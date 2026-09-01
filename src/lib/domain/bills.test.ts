@@ -8,13 +8,15 @@ const bill = (
 		isAutoPay: boolean;
 		dueDay: number | null;
 		minPaymentCents: number | null;
+		paidAt: string | null;
 	}> = {}
 ) => ({
 	title,
 	paid: opts.paid ?? false,
 	isAutoPay: opts.isAutoPay ?? false,
 	dueDay: opts.dueDay ?? null,
-	minPaymentCents: opts.minPaymentCents ?? null
+	minPaymentCents: opts.minPaymentCents ?? null,
+	paidAt: opts.paidAt ?? (opts.paid ? '2026-09-10T12:00:00.000Z' : null)
 });
 
 describe('sortBills', () => {
@@ -61,8 +63,26 @@ describe('totals', () => {
 		expect(unpaidCents(bills)).toBe(8000);
 	});
 
-	it('computes remaining balance from paid bills', () => {
-		expect(remainingCents(200000, bills)).toBe(80000);
-		expect(remainingCents(0, bills)).toBe(-120000);
+	it('deducts all paid bills when there is no balance snapshot time', () => {
+		expect(remainingCents(200000, null, bills)).toBe(80000);
+		expect(remainingCents(0, null, bills)).toBe(-120000);
+	});
+
+	it('only deducts bills paid after the balance snapshot', () => {
+		const asOf = '2026-09-05T00:00:00.000Z';
+		const mixed = [
+			bill('cleared-before', {
+				minPaymentCents: 50000,
+				paid: true,
+				paidAt: '2026-09-02T00:00:00.000Z'
+			}),
+			bill('marked-after', {
+				minPaymentCents: 8000,
+				paid: true,
+				paidAt: '2026-09-10T00:00:00.000Z'
+			}),
+			bill('unpaid', { minPaymentCents: 3000 })
+		];
+		expect(remainingCents(100000, asOf, mixed)).toBe(92000);
 	});
 });

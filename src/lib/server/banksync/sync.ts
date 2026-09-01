@@ -1,6 +1,7 @@
 import { matchTransactions } from '$lib/domain/matching';
+import { setBudgetCents } from '../bills';
 import { db } from '../db';
-import { fetchAccounts, toBankTxns } from './simplefin';
+import { amountToCents, fetchAccounts, toBankTxns } from './simplefin';
 
 export type SyncMatch = {
 	billId: number;
@@ -14,6 +15,8 @@ export type SyncMatch = {
 export type SyncOutcome = {
 	autoMarked: SyncMatch[];
 	suggested: SyncMatch[];
+	// present when a single account is selected and its balance was applied
+	balanceCents: number | null;
 	syncedAt: string;
 };
 
@@ -57,6 +60,15 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 		});
 	}
 
+	// With one account selected, its live balance becomes the month's balance;
+	// paid-before-now bills won't deduct from it (see remainingCents).
+	let balanceCents: number | null = null;
+	if (connection.accountId) {
+		const account = accounts.find((a) => a.id === connection.accountId);
+		balanceCents = account ? amountToCents(account.balance) : null;
+		if (balanceCents !== null) await setBudgetCents(userId, month, balanceCents);
+	}
+
 	const syncedAt = new Date();
 	await db.bankConnection.update({
 		where: { id: connection.id },
@@ -75,6 +87,26 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 	return {
 		autoMarked: confident.map(describe),
 		suggested: suggested.map(describe),
+		balanceCents,
 		syncedAt: syncedAt.toISOString()
 	};
+}
+
+// Re-pulls the selected account's current balance into the month's budget.
+export async function resetBalanceFromBank(userId: string, month: string): Promise<number> {
+	const connection = await db.bankConnection.findUnique({
+		where: { userId_provider: { userId, provider: 'simplefin' } }
+	});
+	if (!connection?.secret) throw new Error('No bank connection');
+	if (!connection.accountId) {
+		throw new Error('Pick a single account first (the "change" link on the bank card)');
+	}
+	const accounts = await fetchAccounts(connection.secret, {
+		balancesOnly: true,
+		accountId: connection.accountId
+	});
+	const balanceCents = accounts[0] ? amountToCents(accounts[0].balance) : null;
+	if (balanceCents === null) throw new Error('Could not read the account balance');
+	await setBudgetCents(userId, month, balanceCents);
+	return balanceCents;
 }

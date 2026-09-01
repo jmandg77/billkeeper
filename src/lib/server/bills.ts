@@ -106,21 +106,32 @@ export async function acceptTxnMatch(
 	userId: string,
 	billId: number,
 	month: string,
-	txnId: string
+	txnId: string,
+	txnDate: string
 ): Promise<void> {
 	const bill = await db.bill.findUnique({ where: { id: billId, userId }, select: { id: true } });
 	if (!bill) throw new Error('Bill not found');
+	// The transaction already cleared, so date it then — a balance snapshot
+	// taken since already reflects this money leaving.
+	const paidAt = /^\d{4}-\d{2}-\d{2}$/.test(txnDate)
+		? new Date(`${txnDate}T00:00:00Z`)
+		: new Date();
 	await db.payment.update({
 		where: { billId_month: { billId, month } },
-		data: { paid: true, paidAt: new Date(), matchedTxnId: txnId }
+		data: { paid: true, paidAt, matchedTxnId: txnId }
 	});
 }
 
-export async function getBudgetCents(userId: string, month: string): Promise<number> {
+export type Budget = { balanceCents: number; balanceAsOf: string | null };
+
+export async function getBudget(userId: string, month: string): Promise<Budget> {
 	const budget = await db.monthBudget.findUnique({
 		where: { userId_month: { userId, month } }
 	});
-	return budget?.balanceCents ?? 0;
+	return {
+		balanceCents: budget?.balanceCents ?? 0,
+		balanceAsOf: budget?.balanceAsOf?.toISOString() ?? null
+	};
 }
 
 export async function setBudgetCents(
@@ -128,9 +139,10 @@ export async function setBudgetCents(
 	month: string,
 	balanceCents: number
 ): Promise<void> {
+	const balanceAsOf = new Date();
 	await db.monthBudget.upsert({
 		where: { userId_month: { userId, month } },
-		update: { balanceCents },
-		create: { userId, month, balanceCents }
+		update: { balanceCents, balanceAsOf },
+		create: { userId, month, balanceCents, balanceAsOf }
 	});
 }

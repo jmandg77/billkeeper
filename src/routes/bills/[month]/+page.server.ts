@@ -10,7 +10,7 @@ import {
 	listBankAccounts,
 	setBankAccount
 } from '$lib/server/banksync';
-import { syncMonth } from '$lib/server/banksync/sync';
+import { resetBalanceFromBank, syncMonth } from '$lib/server/banksync/sync';
 import * as bills from '$lib/server/bills';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -34,14 +34,14 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const month = requireMonth(params);
 
 	const isDemo = user.email === env.DEMO_EMAIL;
-	const [monthBills, months, budgetCents, bank] = await Promise.all([
+	const [monthBills, months, budget, bank] = await Promise.all([
 		bills.listMonth(user.id, month),
 		bills.availableMonths(user.id),
-		bills.getBudgetCents(user.id, month),
+		bills.getBudget(user.id, month),
 		isDemo ? null : getConnection(user.id)
 	]);
 
-	return { month, bills: monthBills, months, budgetCents, bank, isDemo };
+	return { month, bills: monthBills, months, budget, bank, isDemo };
 };
 
 export const actions: Actions = {
@@ -141,8 +141,20 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const billId = Number(form.get('billId'));
 		const txnId = String(form.get('txnId') ?? '');
+		const txnDate = String(form.get('txnDate') ?? '');
 		if (!Number.isInteger(billId) || !txnId) return invalidBill('acceptMatch');
-		await bills.acceptTxnMatch(user.id, billId, month, txnId);
+		await bills.acceptTxnMatch(user.id, billId, month, txnId, txnDate);
+	},
+
+	resetBalance: async ({ locals, params }) => {
+		const user = requireUser(locals);
+		const month = requireMonth(params);
+		try {
+			await resetBalanceFromBank(user.id, month);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : 'Could not reset the balance';
+			return fail(400, { intent: 'budget', errors: { balance: message } as FormErrors });
+		}
 	},
 
 	budget: async ({ locals, params, request }) => {
