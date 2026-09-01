@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import { formatCents } from '$lib/domain/money';
 
 	let { data, form } = $props();
 </script>
@@ -46,6 +47,29 @@
 			</button>
 		</form>
 	</div>
+
+	{#if data.syncedAccounts.length > 0}
+		<div class="mt-6 rounded-lg border border-gray-200 bg-white p-5">
+			<h2 class="font-semibold">Synced accounts</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				Accounts your bank connection shares, refreshed on every sync. Link a bill to one (in the
+				bill's edit form) and its amount follows the account balance.
+			</p>
+			<ul class="mt-3 divide-y divide-gray-100">
+				{#each data.syncedAccounts as account (account.accountId)}
+					<li class="flex items-center justify-between py-2 text-sm">
+						<span>{account.name}</span>
+						<span class="text-gray-600">
+							{formatCents(Math.abs(account.balanceCents))}
+							{#if account.balanceCents < 0}
+								<span class="text-xs text-amber-700">owed</span>
+							{/if}
+						</span>
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
 
 	<div class="mt-6 rounded-lg border border-gray-200 bg-white p-5">
 		<h2 class="font-semibold">Household access</h2>

@@ -35,7 +35,8 @@ export const billInputSchema = z.object({
 	notifyDaysBefore: z.preprocess(
 		emptyToUndefined,
 		z.coerce.number().int().min(0, 'Days must be 0-28').max(28, 'Days must be 0-28').optional()
-	)
+	),
+	linkedAccountId: z.preprocess(emptyToUndefined, z.string().max(200).optional())
 });
 
 export type BillInput = z.infer<typeof billInputSchema>;
@@ -61,7 +62,8 @@ export function parseBillForm(form: FormData) {
 		isAutoPay: form.get('isAutoPay'),
 		minPayment: form.get('minPayment'),
 		payUrl: form.get('payUrl'),
-		notifyDaysBefore: form.get('notifyDaysBefore')
+		notifyDaysBefore: form.get('notifyDaysBefore'),
+		linkedAccountId: form.get('linkedAccountId')
 	});
 	if (result.success) return { data: result.data, errors: null };
 	const errors: Record<string, string> = {};

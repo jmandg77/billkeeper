@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { parseReminderEmails } from '$lib/domain/validation';
+import { listSyncedAccounts } from '$lib/server/banksync';
 import { db } from '$lib/server/db';
 import { getReminderEmails, setReminderEmails } from '$lib/server/notify';
 import type { Actions, PageServerLoad } from './$types';
@@ -23,7 +24,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		loginEmail: user.email,
 		sharedBy: locals.sharedBy,
 		reminderEmails: await getReminderEmails(dataUserId),
-		shares: shares.map((s) => ({ id: s.id, email: s.email }))
+		shares: shares.map((s) => ({ id: s.id, email: s.email })),
+		syncedAccounts: await listSyncedAccounts(dataUserId)
 	};
 };
 

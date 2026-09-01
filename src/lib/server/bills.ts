@@ -23,6 +23,7 @@ export async function listMonth(userId: string, month: string): Promise<BillView
 			minPaymentCents: bill.minPaymentCents,
 			payUrl: bill.payUrl,
 			notifyDaysBefore: bill.notifyDaysBefore,
+			linkedAccountId: bill.linkedAccountId,
 			paid: payment?.paid ?? false,
 			paidAt: payment?.paidAt?.toISOString() ?? null
 		};
@@ -57,6 +58,15 @@ export async function availableMonths(userId: string): Promise<string[]> {
 	return [...months].sort((a, b) => b.localeCompare(a));
 }
 
+// A linked account must be one the user's sync has actually seen.
+async function resolveLinkedAccount(userId: string, accountId?: string): Promise<string | null> {
+	if (!accountId) return null;
+	const account = await db.bankAccount.findUnique({
+		where: { userId_accountId: { userId, accountId } }
+	});
+	return account ? account.accountId : null;
+}
+
 export async function createBill(userId: string, month: string, input: BillInput): Promise<void> {
 	await db.bill.create({
 		data: {
@@ -67,6 +77,7 @@ export async function createBill(userId: string, month: string, input: BillInput
 			minPaymentCents: input.minPayment ?? null,
 			payUrl: input.payUrl ?? null,
 			notifyDaysBefore: input.notifyDaysBefore ?? null,
+			linkedAccountId: await resolveLinkedAccount(userId, input.linkedAccountId),
 			payments: { create: { month } }
 		}
 	});
@@ -81,7 +92,8 @@ export async function updateBill(userId: string, billId: number, input: BillInpu
 			isAutoPay: input.isAutoPay,
 			minPaymentCents: input.minPayment ?? null,
 			payUrl: input.payUrl ?? null,
-			notifyDaysBefore: input.notifyDaysBefore ?? null
+			notifyDaysBefore: input.notifyDaysBefore ?? null,
+			linkedAccountId: await resolveLinkedAccount(userId, input.linkedAccountId)
 		}
 	});
 }

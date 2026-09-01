@@ -6,6 +6,7 @@ export type BillView = {
 	minPaymentCents: number | null;
 	payUrl: string | null;
 	notifyDaysBefore: number | null;
+	linkedAccountId: string | null;
 	paid: boolean;
 	paidAt: string | null;
 };

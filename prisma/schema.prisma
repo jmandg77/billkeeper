@@ -25,6 +25,7 @@ model User {
   bankConnections BankConnection[]
   settings        UserSettings?
   shares          AccountShare[]
+  bankAccounts    BankAccount[]
 
   @@unique([email])
   @@map("user")
@@ -88,6 +89,7 @@ model Bill {
   minPaymentCents Int?
   payUrl          String? // https link to the biller's payment page
   notifyDaysBefore Int? // remind this many days before dueDay; null = off
+  linkedAccountId  String? // bank account whose balance becomes this bill's amount on sync
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   payments        Payment[]
@@ -121,6 +123,19 @@ model MonthBudget {
   balanceAsOf  DateTime?
 
   @@unique([userId, month])
+}
+
+// Accounts seen through the bank connection, refreshed on every sync so the
+// bill form and settings can list them without calling the provider.
+model BankAccount {
+  accountId    String
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  balanceCents Int
+  syncedAt     DateTime
+
+  @@id([userId, accountId])
 }
 
 // Household sharing: a session whose email matches a share operates on the

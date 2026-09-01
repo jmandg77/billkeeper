@@ -31,11 +31,44 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 
 	const [year, m] = month.split('-').map(Number);
 	const startDate = Math.floor(Date.UTC(year, m - 1, 1) / 1000);
-	const accounts = await fetchAccounts(connection.secret, {
-		startDate,
-		accountId: connection.accountId ?? undefined
+	// All accounts, for balances; transactions still match only against the
+	// selected account when one is set.
+	const accounts = await fetchAccounts(connection.secret, { startDate });
+	const txns = accounts
+		.filter((a) => !connection.accountId || a.id === connection.accountId)
+		.flatMap(toBankTxns);
+
+	const syncedAt = new Date();
+	const balances = new Map<string, number>();
+	for (const account of accounts) {
+		const cents = amountToCents(account.balance);
+		if (cents === null) continue;
+		balances.set(account.id, cents);
+		await db.bankAccount.upsert({
+			where: { userId_accountId: { userId, accountId: account.id } },
+			update: { name: account.name, balanceCents: cents, syncedAt },
+			create: { userId, accountId: account.id, name: account.name, balanceCents: cents, syncedAt }
+		});
+	}
+
+	// Linked bills take their amount from the account balance — unpaid ones
+	// only, so a card paid off this month keeps the amount it was paid at.
+	const linkedBills = await db.bill.findMany({
+		where: {
+			userId,
+			linkedAccountId: { not: null },
+			payments: { some: { month, paid: false } }
+		},
+		select: { id: true, linkedAccountId: true }
 	});
-	const txns = accounts.flatMap(toBankTxns);
+	for (const bill of linkedBills) {
+		const cents = balances.get(bill.linkedAccountId!);
+		if (cents === undefined) continue;
+		await db.bill.update({
+			where: { id: bill.id },
+			data: { minPaymentCents: Math.abs(cents) }
+		});
+	}
 
 	const unpaidBills = await db.bill.findMany({
 		where: {
@@ -64,12 +97,10 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 	// paid-before-now bills won't deduct from it (see remainingCents).
 	let balanceCents: number | null = null;
 	if (connection.accountId) {
-		const account = accounts.find((a) => a.id === connection.accountId);
-		balanceCents = account ? amountToCents(account.balance) : null;
+		balanceCents = balances.get(connection.accountId) ?? null;
 		if (balanceCents !== null) await setBudgetCents(userId, month, balanceCents);
 	}
 
-	const syncedAt = new Date();
 	await db.bankConnection.update({
 		where: { id: connection.id },
 		data: { lastSyncedAt: syncedAt }

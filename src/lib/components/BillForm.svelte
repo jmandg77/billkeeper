@@ -2,13 +2,16 @@
 	import { enhance } from '$app/forms';
 	import type { BillView } from '$lib/domain/bills';
 	import { centsToInput } from '$lib/domain/money';
+	import type { SyncedAccount } from '$lib/server/banksync';
 
 	let {
 		bill = null,
+		accounts = [],
 		errors = null,
 		oncancel
 	}: {
 		bill?: BillView | null;
+		accounts?: SyncedAccount[];
 		errors?: Record<string, string> | null;
 		oncancel?: () => void;
 	} = $props();
@@ -87,6 +90,27 @@
 		/>
 		{#if errors?.payUrl}<p class="mt-1 text-xs text-red-600">{errors.payUrl}</p>{/if}
 	</div>
+
+	{#if accounts.length > 0}
+		<div>
+			<label class="block text-sm font-medium" for="linkedAccountId"> Amount from account </label>
+			<select
+				id="linkedAccountId"
+				name="linkedAccountId"
+				class="mt-1 w-full rounded-md border-gray-300 text-sm"
+			>
+				<option value="">Fixed amount</option>
+				{#each accounts as account (account.accountId)}
+					<option value={account.accountId} selected={account.accountId === bill?.linkedAccountId}>
+						{account.name}
+					</option>
+				{/each}
+			</select>
+			<p class="mt-1 text-xs text-gray-400">
+				Each bank sync sets this bill's amount to the account's balance while unpaid.
+			</p>
+		</div>
+	{/if}
 
 	<div>
 		<label class="block text-sm font-medium" for="notifyDaysBefore">

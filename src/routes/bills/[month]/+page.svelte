@@ -82,6 +82,7 @@
 		{#key editingBill?.id ?? 'new'}
 			<BillForm
 				bill={editingBill}
+				accounts={data.syncedAccounts}
 				errors={editingBill ? updateErrors : createErrors}
 				oncancel={() => (editingBill = null)}
 			/>

@@ -73,6 +73,28 @@ export async function setBankAccount(
 	});
 }
 
+export type SyncedAccount = {
+	accountId: string;
+	name: string;
+	balanceCents: number;
+	syncedAt: string;
+};
+
+// The account roster captured at last sync — no provider call involved.
+export async function listSyncedAccounts(userId: string): Promise<SyncedAccount[]> {
+	const accounts = await db.bankAccount.findMany({
+		where: { userId },
+		orderBy: { name: 'asc' }
+	});
+	return accounts.map((a) => ({
+		accountId: a.accountId,
+		name: a.name,
+		balanceCents: a.balanceCents,
+		syncedAt: a.syncedAt.toISOString()
+	}));
+}
+
 export async function disconnectBank(userId: string): Promise<void> {
 	await db.bankConnection.deleteMany({ where: { userId, provider: 'simplefin' } });
+	await db.bankAccount.deleteMany({ where: { userId } });
 }
