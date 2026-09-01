@@ -88,11 +88,11 @@
 				</p>
 				<div class="text-sm text-gray-500">
 					{lastSynced ? `Last synced ${lastSynced}` : 'Not synced yet'}
-					&middot;
+					&middot; sync refreshes every account &middot;
 					{#if bank.accountName}
-						syncing <strong>{bank.accountName}</strong>
+						payments matched from <strong>{bank.accountName}</strong>
 					{:else}
-						syncing <strong>all accounts</strong>
+						payments matched from <strong>all accounts</strong>
 					{/if}
 					<form method="POST" action="?/listBankAccounts" class="inline" use:enhance>
 						<button class="text-indigo-600 underline">change</button>
@@ -175,11 +175,13 @@
 
 		{#if sync}
 			<div class="mt-3 space-y-2 border-t border-gray-100 pt-3">
-				{#if sync.balanceCents !== null}
-					<p class="text-sm text-gray-600">
+				<p class="text-sm text-gray-600">
+					Refreshed {sync.accountsRefreshed}
+					{sync.accountsRefreshed === 1 ? 'account balance' : 'account balances'}.
+					{#if sync.balanceCents !== null}
 						Balance set to {formatCents(sync.balanceCents)} from your account.
-					</p>
-				{/if}
+					{/if}
+				</p>
 				{#if sync.autoMarked.length === 0 && sync.suggested.length === 0}
 					<p class="text-sm text-gray-500">Synced — no new payments matched your unpaid bills.</p>
 				{/if}

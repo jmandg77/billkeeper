@@ -17,6 +17,7 @@ export type SyncOutcome = {
 	suggested: SyncMatch[];
 	// present when a single account is selected and its balance was applied
 	balanceCents: number | null;
+	accountsRefreshed: number;
 	syncedAt: string;
 };
 
@@ -119,6 +120,7 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 		autoMarked: confident.map(describe),
 		suggested: suggested.map(describe),
 		balanceCents,
+		accountsRefreshed: balances.size,
 		syncedAt: syncedAt.toISOString()
 	};
 }
