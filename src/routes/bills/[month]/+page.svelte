@@ -75,7 +75,7 @@
 {/if}
 
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-	<div class="lg:col-span-1">
+	<div class="lg:sticky lg:top-6 lg:col-span-1 lg:self-start">
 		<h2 class="mb-3 text-lg font-semibold">
 			{editingBill ? `Edit ${editingBill.title}` : 'Add a bill'}
 		</h2>
