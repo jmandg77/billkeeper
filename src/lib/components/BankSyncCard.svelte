@@ -1,15 +1,18 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { formatCents } from '$lib/domain/money';
+	import type { BankAccountOption, ConnectionSummary } from '$lib/server/banksync';
 	import type { SyncOutcome } from '$lib/server/banksync/sync';
 
 	let {
 		bank,
 		sync = null,
+		accounts = null,
 		errors = null
 	}: {
-		bank: { institution: string | null; lastSyncedAt: string | null } | null;
+		bank: ConnectionSummary | null;
 		sync?: SyncOutcome | null;
+		accounts?: BankAccountOption[] | null;
 		errors?: Record<string, string> | null;
 	} = $props();
 
@@ -83,9 +86,18 @@
 					{bank.institution ?? 'Bank'} connected
 					<span class="ml-2 inline-block h-2 w-2 rounded-full bg-green-500"></span>
 				</p>
-				<p class="text-sm text-gray-500">
+				<div class="text-sm text-gray-500">
 					{lastSynced ? `Last synced ${lastSynced}` : 'Not synced yet'}
-				</p>
+					&middot;
+					{#if bank.accountName}
+						syncing <strong>{bank.accountName}</strong>
+					{:else}
+						syncing <strong>all accounts</strong>
+					{/if}
+					<form method="POST" action="?/listBankAccounts" class="inline" use:enhance>
+						<button class="text-indigo-600 underline">change</button>
+					</form>
+				</div>
 			</div>
 			<div class="flex items-center gap-2">
 				<form
@@ -125,6 +137,40 @@
 
 		{#if errors?.sync}
 			<p class="mt-2 text-sm text-red-600">{errors.sync}</p>
+		{/if}
+
+		{#if accounts}
+			<form
+				method="POST"
+				action="?/setBankAccount"
+				class="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 text-sm"
+				use:enhance
+			>
+				<label for="bank-account" class="text-gray-600">Match bills against</label>
+				<select
+					id="bank-account"
+					name="accountId"
+					class="rounded-md border-gray-300 text-sm"
+					onchange={(e) => {
+						const option = e.currentTarget.selectedOptions[0];
+						const nameInput = e.currentTarget.form?.elements.namedItem('accountName');
+						if (nameInput instanceof HTMLInputElement) nameInput.value = option?.text ?? '';
+					}}
+				>
+					<option value="">All accounts</option>
+					{#each accounts as account (account.id)}
+						<option value={account.id} selected={account.id === bank.accountId}>
+							{account.name}
+						</option>
+					{/each}
+				</select>
+				<input type="hidden" name="accountName" value={bank.accountName ?? ''} />
+				<button
+					class="rounded-md bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-500"
+				>
+					Save
+				</button>
+			</form>
 		{/if}
 
 		{#if sync}

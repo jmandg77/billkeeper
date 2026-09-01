@@ -126,7 +126,8 @@ model BankConnection {
   secret       String? // provider access material (Teller: enrollment access token)
   enrollmentId String?
   institution  String?
-  accountId    String? // provider account the bills are paid from
+  accountId    String? // provider account the bills are paid from; null = all
+  accountName  String?
   lastSyncedAt DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

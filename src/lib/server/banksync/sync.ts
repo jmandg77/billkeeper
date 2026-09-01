@@ -28,7 +28,10 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 
 	const [year, m] = month.split('-').map(Number);
 	const startDate = Math.floor(Date.UTC(year, m - 1, 1) / 1000);
-	const accounts = await fetchAccounts(connection.secret, { startDate });
+	const accounts = await fetchAccounts(connection.secret, {
+		startDate,
+		accountId: connection.accountId ?? undefined
+	});
 	const txns = accounts.flatMap(toBankTxns);
 
 	const unpaidBills = await db.bill.findMany({

@@ -65,12 +65,13 @@ export function splitAccessUrl(accessUrl: string): { base: string; authorization
 
 export async function fetchAccounts(
 	accessUrl: string,
-	opts: { startDate?: number; balancesOnly?: boolean } = {}
+	opts: { startDate?: number; balancesOnly?: boolean; accountId?: string } = {}
 ): Promise<SimplefinAccount[]> {
 	const { base, authorization } = splitAccessUrl(accessUrl);
 	const params = new URLSearchParams();
 	if (opts.startDate !== undefined) params.set('start-date', String(opts.startDate));
 	if (opts.balancesOnly) params.set('balances-only', '1');
+	if (opts.accountId !== undefined) params.set('account', opts.accountId);
 	const res = await fetch(`${base}/accounts?${params}`, { headers: { authorization } });
 	if (res.status === 403) throw new Error('SimpleFIN access was revoked — reconnect your bank');
 	if (!res.ok) throw new Error(`SimpleFIN request failed (${res.status})`);

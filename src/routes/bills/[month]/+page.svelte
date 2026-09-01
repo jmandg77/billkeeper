@@ -16,10 +16,17 @@
 	const updateErrors = $derived(form?.intent === 'update' ? (form.errors ?? null) : null);
 	const balanceError = $derived(form?.intent === 'budget' ? form.errors?.balance : undefined);
 	const bankErrors = $derived(
-		form?.intent === 'connectBank' || form?.intent === 'syncBank' ? (form.errors ?? null) : null
+		form?.intent === 'connectBank' ||
+			form?.intent === 'syncBank' ||
+			form?.intent === 'listBankAccounts'
+			? (form.errors ?? null)
+			: null
 	);
 	const syncOutcome = $derived(
 		form?.intent === 'syncBank' && 'sync' in form ? (form.sync ?? null) : null
+	);
+	const bankAccounts = $derived(
+		form?.intent === 'listBankAccounts' && 'accounts' in form ? (form.accounts ?? null) : null
 	);
 </script>
 
@@ -33,7 +40,7 @@
 <SummaryBar bills={data.bills} budgetCents={data.budgetCents} {balanceError} />
 
 {#if !data.isDemo}
-	<BankSyncCard bank={data.bank} sync={syncOutcome} errors={bankErrors} />
+	<BankSyncCard bank={data.bank} sync={syncOutcome} accounts={bankAccounts} errors={bankErrors} />
 {/if}
 
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
