@@ -27,12 +27,6 @@ const bill = (
 });
 
 describe('sortBills', () => {
-	it('sinks paid bills below unpaid regardless of mode', () => {
-		const input = [bill('paid-early', { paid: true, dueDay: 1 }), bill('unpaid', { dueDay: 20 })];
-		expect(sortBills(input, 'dueDate').map((b) => b.title)).toEqual(['unpaid', 'paid-early']);
-		expect(sortBills(input, 'alpha').map((b) => b.title)).toEqual(['unpaid', 'paid-early']);
-	});
-
 	it('orders by due day, bills without a due day last', () => {
 		const sorted = sortBills([
 			bill('no-due'),
@@ -63,14 +57,17 @@ describe('sortBills', () => {
 });
 
 describe('splitSections', () => {
-	it('separates manual and autopay bills preserving order', () => {
-		const { manual, autopay } = splitSections([
+	it('separates unpaid manual, unpaid autopay, and everything paid', () => {
+		const { toPay, autopay, paid } = splitSections([
 			bill('a', { isAutoPay: true }),
 			bill('m1'),
-			bill('m2')
+			bill('m2'),
+			bill('paid-manual', { paid: true }),
+			bill('paid-auto', { paid: true, isAutoPay: true })
 		]);
-		expect(manual.map((b) => b.title)).toEqual(['m1', 'm2']);
+		expect(toPay.map((b) => b.title)).toEqual(['m1', 'm2']);
 		expect(autopay.map((b) => b.title)).toEqual(['a']);
+		expect(paid.map((b) => b.title)).toEqual(['paid-manual', 'paid-auto']);
 	});
 });
 

@@ -31,10 +31,11 @@
 	}
 
 	const sections = $derived.by(() => {
-		const { manual, autopay } = splitSections(data.bills);
+		const { toPay, autopay, paid } = splitSections(data.bills);
 		return [
-			{ title: 'To pay', bills: sortBills(manual, sortMode) },
-			{ title: 'Autopay', bills: sortBills(autopay, sortMode) }
+			{ title: 'To pay', bills: sortBills(toPay, sortMode) },
+			{ title: 'Autopay', bills: sortBills(autopay, sortMode) },
+			{ title: 'Paid', bills: sortBills(paid, sortMode) }
 		].filter((s) => s.bills.length > 0);
 	});
 	const createErrors = $derived(form?.intent === 'create' ? (form.errors ?? null) : null);

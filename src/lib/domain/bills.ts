@@ -12,27 +12,27 @@ export type BillView = {
 
 export type SortMode = 'dueDate' | 'alpha';
 
-// Paid bills sink to the bottom; above that, the chosen order — due day
-// (bills without one last) or title.
-export function sortBills<T extends Pick<BillView, 'title' | 'dueDay' | 'paid'>>(
+// The chosen order: due day (bills without one last) or title.
+export function sortBills<T extends Pick<BillView, 'title' | 'dueDay'>>(
 	bills: T[],
 	mode: SortMode = 'dueDate'
 ): T[] {
 	return [...bills].sort(
 		(a, b) =>
-			Number(a.paid) - Number(b.paid) ||
 			(mode === 'dueDate' ? (a.dueDay ?? 32) - (b.dueDay ?? 32) : 0) ||
 			a.title.localeCompare(b.title)
 	);
 }
 
-// Bills the user pays by hand come first; autopay watches itself.
-export function splitSections<T extends Pick<BillView, 'isAutoPay'>>(
+// Unpaid bills split by who does the paying; everything already paid lands
+// together at the bottom.
+export function splitSections<T extends Pick<BillView, 'isAutoPay' | 'paid'>>(
 	bills: T[]
-): { manual: T[]; autopay: T[] } {
+): { toPay: T[]; autopay: T[]; paid: T[] } {
 	return {
-		manual: bills.filter((b) => !b.isAutoPay),
-		autopay: bills.filter((b) => b.isAutoPay)
+		toPay: bills.filter((b) => !b.paid && !b.isAutoPay),
+		autopay: bills.filter((b) => !b.paid && b.isAutoPay),
+		paid: bills.filter((b) => b.paid)
 	};
 }
 
