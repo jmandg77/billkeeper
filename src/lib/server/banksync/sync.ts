@@ -1,5 +1,6 @@
+import { env } from '$env/dynamic/private';
 import { matchTransactions } from '$lib/domain/matching';
-import { setBudgetCents } from '../bills';
+import { ensureMonthSeeded, setBudgetCents } from '../bills';
 import { db } from '../db';
 import { amountToCents, fetchAccounts, toBankTxns } from './simplefin';
 
@@ -23,8 +24,13 @@ export type SyncOutcome = {
 
 // Fetches this month's bank transactions and pairs them with unpaid bills.
 // Confident matches are marked paid immediately; amount-only matches are
-// returned for the user to confirm.
-export async function syncMonth(userId: string, month: string): Promise<SyncOutcome> {
+// returned for the user to confirm. The daily cron passes updateBudget: false
+// so unattended syncs never stomp a manually set month balance.
+export async function syncMonth(
+	userId: string,
+	month: string,
+	{ updateBudget = true } = {}
+): Promise<SyncOutcome> {
 	const connection = await db.bankConnection.findUnique({
 		where: { userId_provider: { userId, provider: 'simplefin' } }
 	});
@@ -86,7 +92,7 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 	// With one account selected, its live balance becomes the month's balance;
 	// paid-before-now bills won't deduct from it (see remainingCents).
 	let balanceCents: number | null = null;
-	if (connection.accountId) {
+	if (updateBudget && connection.accountId) {
 		balanceCents = balances.get(connection.accountId) ?? null;
 		if (balanceCents !== null) await setBudgetCents(userId, month, balanceCents);
 	}
@@ -112,6 +118,36 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 		accountsRefreshed: balances.size,
 		syncedAt: syncedAt.toISOString()
 	};
+}
+
+export type DailySyncResult = {
+	usersSynced: number;
+	autoMarked: number;
+	failures: number;
+};
+
+// Daily job: refresh balances and payment matching for every connected user.
+// Leaves the month balance alone — that stays user-controlled.
+export async function syncAllConnections(month: string): Promise<DailySyncResult> {
+	const connections = await db.bankConnection.findMany({
+		where: { provider: 'simplefin' },
+		select: { userId: true, user: { select: { email: true } } }
+	});
+
+	const result: DailySyncResult = { usersSynced: 0, autoMarked: 0, failures: 0 };
+	for (const connection of connections) {
+		if (env.DEMO_EMAIL && connection.user.email === env.DEMO_EMAIL) continue;
+		try {
+			await ensureMonthSeeded(connection.userId, month);
+			const outcome = await syncMonth(connection.userId, month, { updateBudget: false });
+			result.usersSynced += 1;
+			result.autoMarked += outcome.autoMarked.length;
+		} catch (e) {
+			result.failures += 1;
+			console.error('daily sync failed for user', connection.userId, e);
+		}
+	}
+	return result;
 }
 
 // Re-pulls the selected account's current balance into the month's budget.

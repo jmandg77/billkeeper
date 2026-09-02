@@ -11,7 +11,7 @@ entirely on free tiers, plus one optional $1.50/mo bank-sync subscription.
 
 | Service                                                                                                                            | What it's for                                              | Sign up                   | Cost         |
 | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------- | ------------ |
-| [Vercel](https://vercel.com/signup)                                                                                                | Hosting + the daily reminder cron                          | vercel.com/signup         | Free (Hobby) |
+| [Vercel](https://vercel.com/signup)                                                                                                | Hosting + the daily sync/reminder cron                     | vercel.com/signup         | Free (Hobby) |
 | [Prisma Postgres](https://console.prisma.io)                                                                                       | The database                                               | console.prisma.io         | Free tier    |
 | [GitHub OAuth app](https://github.com/settings/developers) or [Google OAuth client](https://console.cloud.google.com/auth/clients) | Sign-in (either one is enough)                             | —                         | Free         |
 | [SimpleFIN Bridge](https://beta-bridge.simplefin.org) _(optional)_                                                                 | Read-only bank sync: auto-detect paid bills, live balances | beta-bridge.simplefin.org | $1.50/mo     |
@@ -64,6 +64,10 @@ swapping is a contained change — a capable AI coding assistant can do it from 
   suggestions
 - **Scoped matching** — pick which account payments are matched from; sync still refreshes every
   account's balance
+- **Daily auto-sync** — the daily cron refreshes every connected user's balances and payment
+  matching before reminders go out (so a bill the bank shows as paid never gets a reminder).
+  It never touches the month's balance — set or reset that yourself. SimpleFIN itself caches
+  bank data and refreshes roughly daily, so balances can lag your bank by up to a day
 - **Balance tracking** — the month's balance can come straight from your checking account (or be
   set by hand), and only bills paid _after_ that snapshot deduct from it
 - **Linked accounts** — link a bill (say, a credit card) to an account and its live balance shows
@@ -121,7 +125,7 @@ access URL.
 - `src/routes/bills/[month]/` — server-rendered month page; all mutations are
   progressive-enhancement form actions
 - `src/routes/settings/` — bank connection, reminder recipients, household sharing
-- `src/routes/api/cron/reminders/` — daily Vercel cron endpoint (guarded by `CRON_SECRET`)
+- `src/routes/api/cron/reminders/` — daily Vercel cron endpoint: bank sync + reminders (guarded by `CRON_SECRET`)
 - Household sharing resolves in `hooks.server.ts`: a session whose email matches an
   `AccountShare` operates on the owner's data (`locals.dataUserId`)
 
