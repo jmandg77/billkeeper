@@ -3,20 +3,17 @@
 	import type { BillView } from '$lib/domain/bills';
 	import { centsToInput, formatCents } from '$lib/domain/money';
 
-	let {
-		bill,
-		amountError,
-		onedit
-	}: { bill: BillView; amountError?: string; onedit: (bill: BillView) => void } = $props();
+	let { bill, month, amountError }: { bill: BillView; month: string; amountError?: string } =
+		$props();
 
 	let editingAmount = $state(false);
 </script>
 
 <li
-	class="flex items-center justify-between gap-4 rounded-lg border bg-white p-4
+	class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-lg border bg-white p-4
 	{bill.paid ? 'border-green-200 bg-green-50/50' : 'border-gray-200'}"
 >
-	<div class="flex min-w-0 items-center gap-3">
+	<div class="flex min-w-0 flex-1 basis-56 items-center gap-3">
 		<form method="POST" action="?/setPaid" use:enhance>
 			<input type="hidden" name="billId" value={bill.id} />
 			<input type="hidden" name="paid" value={String(!bill.paid)} />
@@ -113,12 +110,12 @@
 				Pay &nearr;
 			</a>
 		{/if}
-		<button
-			onclick={() => onedit(bill)}
+		<a
+			href={`/bills/${month}/edit/${bill.id}`}
 			class="rounded-md border border-gray-300 px-2.5 py-1.5 text-sm hover:bg-gray-100"
 		>
 			Edit
-		</button>
+		</a>
 		<form
 			method="POST"
 			action="?/delete"

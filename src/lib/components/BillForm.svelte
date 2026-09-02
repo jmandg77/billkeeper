@@ -8,34 +8,19 @@
 		bill = null,
 		accounts = [],
 		errors = null,
-		oncancel
+		cancelHref
 	}: {
 		bill?: BillView | null;
 		accounts?: SyncedAccount[];
 		errors?: Record<string, string> | null;
-		oncancel?: () => void;
+		cancelHref: string;
 	} = $props();
 
 	const editing = $derived(bill !== null);
 </script>
 
-<form
-	method="POST"
-	action={editing ? '?/update' : '?/create'}
-	class="space-y-4 rounded-lg border border-gray-200 bg-white p-4"
-	use:enhance={({ formElement }) =>
-		async ({ result, update }) => {
-			await update();
-			if (result.type === 'success') {
-				formElement.reset();
-				oncancel?.();
-			}
-		}}
->
-	{#if editing && bill}
-		<input type="hidden" name="billId" value={bill.id} />
-	{/if}
-
+<!-- Posts to the page's default action (create on /new, update on /edit). -->
+<form method="POST" class="space-y-4 rounded-lg border border-gray-200 bg-white p-4" use:enhance>
 	<div>
 		<label class="block text-sm font-medium" for="title">Title</label>
 		<input
@@ -150,14 +135,11 @@
 		>
 			{editing ? 'Save changes' : 'Add bill'}
 		</button>
-		{#if editing}
-			<button
-				type="button"
-				onclick={() => oncancel?.()}
-				class="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
-			>
-				Cancel
-			</button>
-		{/if}
+		<a
+			href={cancelHref}
+			class="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+		>
+			Cancel
+		</a>
 	</div>
 </form>

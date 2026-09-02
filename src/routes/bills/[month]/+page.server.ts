@@ -2,8 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { isMonth } from '$lib/domain/month';
 import { parseMoney } from '$lib/domain/money';
-import { parseBillForm } from '$lib/domain/validation';
-import { getConnection, listSyncedAccounts } from '$lib/server/banksync';
+import { getConnection } from '$lib/server/banksync';
 import { resetBalanceFromBank, syncMonth } from '$lib/server/banksync/sync';
 import * as bills from '$lib/server/bills';
 import type { Actions, PageServerLoad } from './$types';
@@ -30,37 +29,17 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const month = requireMonth(params);
 
 	const isDemo = user.email === env.DEMO_EMAIL;
-	const [monthBills, months, budget, bank, syncedAccounts] = await Promise.all([
+	const [monthBills, months, budget, bank] = await Promise.all([
 		bills.listMonth(user.id, month),
 		bills.availableMonths(user.id),
 		bills.getBudget(user.id, month),
-		getConnection(user.id),
-		listSyncedAccounts(user.id)
+		getConnection(user.id)
 	]);
 
-	return { month, bills: monthBills, months, budget, bank, syncedAccounts, isDemo };
+	return { month, bills: monthBills, months, budget, bank, isDemo };
 };
 
 export const actions: Actions = {
-	create: async ({ locals, params, request }) => {
-		const user = requireUser(locals);
-		const month = requireMonth(params);
-		const { data, errors } = parseBillForm(await request.formData());
-		if (!data) return fail(400, { intent: 'create', errors });
-		await bills.createBill(user.id, month, data);
-	},
-
-	update: async ({ locals, params, request }) => {
-		const user = requireUser(locals);
-		requireMonth(params);
-		const form = await request.formData();
-		const billId = Number(form.get('billId'));
-		if (!Number.isInteger(billId)) return invalidBill('update');
-		const { data, errors } = parseBillForm(form);
-		if (!data) return fail(400, { intent: 'update', errors });
-		await bills.updateBill(user.id, billId, data);
-	},
-
 	setAmount: async ({ locals, params, request }) => {
 		const user = requireUser(locals);
 		const month = requireMonth(params);
