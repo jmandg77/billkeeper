@@ -29,7 +29,7 @@ export const actions: Actions = {
 		const user = requireUser(locals);
 		const { month, billId } = requireParams(params);
 		const { data, errors } = parseBillForm(await request.formData());
-		if (!data) return fail(400, { errors });
+		if (!data) return fail(400, { intent: 'billForm', errors });
 		await bills.updateBill(user.id, billId, data);
 		redirect(303, `/bills/${month}`);
 	}

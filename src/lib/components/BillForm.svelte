@@ -8,19 +8,36 @@
 		bill = null,
 		accounts = [],
 		errors = null,
-		cancelHref
+		action,
+		cancelHref,
+		oncancel
 	}: {
 		bill?: BillView | null;
 		accounts?: SyncedAccount[];
 		errors?: Record<string, string> | null;
-		cancelHref: string;
+		action?: string;
+		cancelHref?: string;
+		oncancel?: () => void;
 	} = $props();
 
 	const editing = $derived(bill !== null);
 </script>
 
-<!-- Posts to the page's default action (create on /new, update on /edit). -->
-<form method="POST" class="space-y-4 rounded-lg border border-gray-200 bg-white p-4" use:enhance>
+<!-- Without `action`, posts to the page's default action (create on /new, update on /edit).
+     The bills-page sidebar passes those routes' actions in explicitly instead. -->
+<form
+	method="POST"
+	{action}
+	class="space-y-4 rounded-lg border border-gray-200 bg-white p-4"
+	use:enhance={({ formElement }) =>
+		async ({ result, update }) => {
+			await update();
+			if (result.type === 'redirect') {
+				formElement.reset();
+				oncancel?.();
+			}
+		}}
+>
 	<div>
 		<label class="block text-sm font-medium" for="title">Title</label>
 		<input
@@ -135,11 +152,21 @@
 		>
 			{editing ? 'Save changes' : 'Add bill'}
 		</button>
-		<a
-			href={cancelHref}
-			class="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
-		>
-			Cancel
-		</a>
+		{#if cancelHref}
+			<a
+				href={cancelHref}
+				class="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+			>
+				Cancel
+			</a>
+		{:else if editing && oncancel}
+			<button
+				type="button"
+				onclick={() => oncancel?.()}
+				class="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+			>
+				Cancel
+			</button>
+		{/if}
 	</div>
 </form>

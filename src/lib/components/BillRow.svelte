@@ -3,8 +3,17 @@
 	import type { BillView } from '$lib/domain/bills';
 	import { centsToInput, formatCents } from '$lib/domain/money';
 
-	let { bill, month, amountError }: { bill: BillView; month: string; amountError?: string } =
-		$props();
+	let {
+		bill,
+		month,
+		amountError,
+		onedit
+	}: {
+		bill: BillView;
+		month: string;
+		amountError?: string;
+		onedit: (bill: BillView) => void;
+	} = $props();
 
 	let editingAmount = $state(false);
 </script>
@@ -110,12 +119,19 @@
 				Pay &nearr;
 			</a>
 		{/if}
+		<!-- Edit opens a full screen on phones, the sidebar form on desktop. -->
 		<a
 			href={`/bills/${month}/edit/${bill.id}`}
-			class="rounded-md border border-gray-300 px-2.5 py-1.5 text-sm hover:bg-gray-100"
+			class="rounded-md border border-gray-300 px-2.5 py-1.5 text-sm hover:bg-gray-100 lg:hidden"
 		>
 			Edit
 		</a>
+		<button
+			onclick={() => onedit(bill)}
+			class="hidden rounded-md border border-gray-300 px-2.5 py-1.5 text-sm hover:bg-gray-100 lg:block"
+		>
+			Edit
+		</button>
 		<form
 			method="POST"
 			action="?/delete"

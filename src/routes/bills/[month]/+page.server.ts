@@ -2,7 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { isMonth } from '$lib/domain/month';
 import { parseMoney } from '$lib/domain/money';
-import { getConnection } from '$lib/server/banksync';
+import { getConnection, listSyncedAccounts } from '$lib/server/banksync';
 import { resetBalanceFromBank, syncMonth } from '$lib/server/banksync/sync';
 import * as bills from '$lib/server/bills';
 import type { Actions, PageServerLoad } from './$types';
@@ -29,14 +29,15 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const month = requireMonth(params);
 
 	const isDemo = user.email === env.DEMO_EMAIL;
-	const [monthBills, months, budget, bank] = await Promise.all([
+	const [monthBills, months, budget, bank, syncedAccounts] = await Promise.all([
 		bills.listMonth(user.id, month),
 		bills.availableMonths(user.id),
 		bills.getBudget(user.id, month),
-		getConnection(user.id)
+		getConnection(user.id),
+		listSyncedAccounts(user.id)
 	]);
 
-	return { month, bills: monthBills, months, budget, bank, isDemo };
+	return { month, bills: monthBills, months, budget, bank, syncedAccounts, isDemo };
 };
 
 export const actions: Actions = {

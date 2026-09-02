@@ -1,12 +1,15 @@
 <script lang="ts">
+	import BillForm from '$lib/components/BillForm.svelte';
 	import SyncPanel from '$lib/components/SyncPanel.svelte';
 	import BillRow from '$lib/components/BillRow.svelte';
 	import MonthPicker from '$lib/components/MonthPicker.svelte';
 	import SummaryBar from '$lib/components/SummaryBar.svelte';
-	import { sortBills, splitSections, type SortMode } from '$lib/domain/bills';
+	import { sortBills, splitSections, type BillView, type SortMode } from '$lib/domain/bills';
 	import { formatMonth } from '$lib/domain/month';
 
 	let { data, form } = $props();
+
+	let editingBill = $state<BillView | null>(null);
 
 	const SORT_KEY = 'billkeeper:sortMode';
 	let sortMode = $state<SortMode>('dueDate');
@@ -46,6 +49,12 @@
 		form?.intent === 'setAmount' && 'billId' in form && form.billId === billId
 			? form.errors?.amount
 			: undefined;
+	// The sidebar posts cross-route to /new and /edit, whose failures aren't in
+	// this page's ActionData type — hence the cast.
+	const billFormErrors = $derived.by(() => {
+		const f = form as { intent?: string; errors?: Record<string, string> } | null;
+		return f?.intent === 'billForm' ? (f.errors ?? null) : null;
+	});
 </script>
 
 <svelte:head><title>Bills — {formatMonth(data.month)}</title></svelte:head>
@@ -71,8 +80,25 @@
 	/>
 {/if}
 
-<div>
-	<div>
+<div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+	<div class="hidden lg:sticky lg:top-6 lg:col-span-1 lg:block lg:self-start">
+		<h2 class="mb-3 text-lg font-semibold">
+			{editingBill ? `Edit ${editingBill.title}` : 'Add a bill'}
+		</h2>
+		{#key editingBill?.id ?? 'new'}
+			<BillForm
+				bill={editingBill}
+				accounts={data.syncedAccounts}
+				errors={billFormErrors}
+				action={editingBill
+					? `/bills/${data.month}/edit/${editingBill.id}`
+					: `/bills/${data.month}/new`}
+				oncancel={() => (editingBill = null)}
+			/>
+		{/key}
+	</div>
+
+	<div class="lg:col-span-2">
 		<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
 			<h2 class="text-lg font-semibold">This month</h2>
 			{#if data.bills.length > 0}
@@ -99,7 +125,10 @@
 		</div>
 		{#if data.bills.length === 0}
 			<p class="rounded-lg border border-dashed border-gray-300 p-8 text-center text-gray-500">
-				No bills yet — add your first one with the + button.
+				No bills yet — add your first one
+				<span class="lg:hidden">with the + button</span><span class="hidden lg:inline"
+					>on the left</span
+				>.
 			</p>
 		{:else}
 			{#each sections as section (section.title)}
@@ -110,7 +139,12 @@
 				</h3>
 				<ul class="space-y-3">
 					{#each section.bills as bill (bill.id)}
-						<BillRow {bill} month={data.month} amountError={amountErrorFor(bill.id)} />
+						<BillRow
+							{bill}
+							month={data.month}
+							amountError={amountErrorFor(bill.id)}
+							onedit={(b) => (editingBill = b)}
+						/>
 					{/each}
 				</ul>
 			{/each}
@@ -122,7 +156,7 @@
 	href={`/bills/${data.month}/new`}
 	aria-label="Add a bill"
 	title="Add a bill"
-	class="fixed bottom-6 left-6 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-3xl leading-none text-white shadow-lg hover:bg-indigo-500"
+	class="fixed bottom-6 left-6 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-3xl leading-none text-white shadow-lg hover:bg-indigo-500 lg:hidden"
 >
 	+
 </a>
