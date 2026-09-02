@@ -126,9 +126,7 @@
 		{#if data.bills.length === 0}
 			<p class="rounded-lg border border-dashed border-gray-300 p-8 text-center text-gray-500">
 				No bills yet — add your first one
-				<span class="lg:hidden">with the + button</span><span class="hidden lg:inline"
-					>on the left</span
-				>.
+				<span class="lg:hidden">below</span><span class="hidden lg:inline">on the left</span>.
 			</p>
 		{:else}
 			{#each sections as section (section.title)}
@@ -149,14 +147,11 @@
 				</ul>
 			{/each}
 		{/if}
+		<a
+			href={`/bills/${data.month}/new`}
+			class="mt-3 flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-4 text-sm font-medium text-gray-500 hover:border-indigo-400 hover:text-indigo-600 lg:hidden"
+		>
+			<span class="text-lg leading-none">+</span> Add a bill
+		</a>
 	</div>
 </div>
-
-<a
-	href={`/bills/${data.month}/new`}
-	aria-label="Add a bill"
-	title="Add a bill"
-	class="fixed bottom-6 left-6 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-3xl leading-none text-white shadow-lg hover:bg-indigo-500 lg:hidden"
->
-	+
-</a>
