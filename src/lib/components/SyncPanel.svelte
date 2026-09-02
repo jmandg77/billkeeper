@@ -55,8 +55,19 @@
 				{lastSynced ? `Last synced ${lastSynced}` : 'Not synced yet'}
 			</span>
 		{:else}
-			<a href={resolve('/settings')} class="text-sm text-indigo-600 underline">
-				Set up bank sync in Settings
+			<a
+				href="https://beta-bridge.simplefin.org"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
+			>
+				Set up bank sync &nearr;
+			</a>
+			<a
+				href={resolve('/help/bank-sync')}
+				class="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-100"
+			>
+				Instructions
 			</a>
 		{/if}
 	</div>
