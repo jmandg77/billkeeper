@@ -34,8 +34,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		bills.listMonth(user.id, month),
 		bills.availableMonths(user.id),
 		bills.getBudget(user.id, month),
-		isDemo ? null : getConnection(user.id),
-		isDemo ? [] : listSyncedAccounts(user.id)
+		getConnection(user.id),
+		listSyncedAccounts(user.id)
 	]);
 
 	return { month, bills: monthBills, months, budget, bank, syncedAccounts, isDemo };

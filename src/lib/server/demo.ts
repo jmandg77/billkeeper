@@ -38,15 +38,33 @@ export async function ensureDemoUser(db: PrismaClient, creds: DemoCredentials): 
 	return userId;
 }
 
+// SimpleFIN's public demo access URL — no real credentials, fake data, so the
+// demo account can run a genuine end-to-end sync.
+const DEMO_BRIDGE_URL = 'https://demo:demo@beta-bridge.simplefin.org/simplefin';
+
 export async function resetDemoData(db: PrismaClient, userId: string): Promise<void> {
 	await db.bill.deleteMany({ where: { userId } });
 	await db.monthBudget.deleteMany({ where: { userId } });
 	await db.bankAccount.deleteMany({ where: { userId } });
+	await db.bankConnection.deleteMany({ where: { userId } });
 
 	const month = currentMonth();
 	const lastMonth = previousMonth(month);
 	const now = new Date();
 	const anHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+	await db.bankConnection.create({
+		data: {
+			userId,
+			provider: 'simplefin',
+			secret: DEMO_BRIDGE_URL,
+			institution: 'SimpleFIN Demo',
+			status: 'connected',
+			accountId: 'Demo Checking',
+			accountName: 'SimpleFIN Checking',
+			lastSyncedAt: anHourAgo
+		}
+	});
 
 	// Fake "synced" accounts so linked bills can show a live balance line.
 	const demoAccounts = [
@@ -158,6 +176,18 @@ export async function resetDemoData(db: PrismaClient, userId: string): Promise<v
 			dueDay: null,
 			isAutoPay: false,
 			minPaymentCents: 6200,
+			payUrl: null,
+			notifyDaysBefore: null,
+			linkedAccountId: null,
+			paidThisMonth: false
+		},
+		{
+			// Amount matches a transaction in the demo bridge's checking account,
+			// so "Sync linked accounts" produces a one-click payment suggestion.
+			title: 'Groceries',
+			dueDay: 3,
+			isAutoPay: false,
+			minPaymentCents: 17001,
 			payUrl: null,
 			notifyDaysBefore: null,
 			linkedAccountId: null,

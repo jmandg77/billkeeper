@@ -51,6 +51,7 @@ export async function sendDueReminders(now: Date = new Date()): Promise<Reminder
 
 	const byUser = new Map<string, { email: string; reminders: Reminder[] }>();
 	for (const bill of bills) {
+		if (env.DEMO_EMAIL && bill.user.email === env.DEMO_EMAIL) continue;
 		const due = reminderDueOn(today, bill.dueDay!, bill.notifyDaysBefore!);
 		if (!due) continue;
 		// The due month may not be materialized yet when the window crosses months.

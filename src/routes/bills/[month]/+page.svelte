@@ -67,7 +67,7 @@
 	{balanceError}
 />
 
-{#if !data.isDemo}
+{#if data.bank || !data.isDemo}
 	<SyncPanel
 		connected={data.bank !== null}
 		lastSyncedAt={data.bank?.lastSyncedAt ?? null}

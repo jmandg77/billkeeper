@@ -27,14 +27,25 @@ function dataUserId(locals: App.Locals) {
 	return locals.dataUserId ?? requireUser(locals).id;
 }
 
+function isDemo(locals: App.Locals) {
+	return locals.user !== null && locals.user.email === env.DEMO_EMAIL;
+}
+
+// The demo account may look around and sync, but not change settings.
+function forbidDemo(locals: App.Locals, intent: string) {
+	if (isDemo(locals)) return fail(403, { intent, error: 'Not available in the demo' });
+	return null;
+}
+
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = requireUser(locals);
-	if (user.email === env.DEMO_EMAIL) redirect(302, '/bills');
-	const shares = locals.sharedBy
-		? []
-		: await db.accountShare.findMany({ where: { ownerId: user.id }, orderBy: { email: 'asc' } });
+	const shares =
+		locals.sharedBy || isDemo(locals)
+			? []
+			: await db.accountShare.findMany({ where: { ownerId: user.id }, orderBy: { email: 'asc' } });
 	return {
 		loginEmail: user.email,
+		isDemo: isDemo(locals),
 		sharedBy: locals.sharedBy,
 		bank: await getConnection(dataUserId(locals)),
 		reminderEmails: await getReminderEmails(dataUserId(locals)),
@@ -46,6 +57,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	connectBank: async ({ locals, request }) => {
 		requireUser(locals);
+		const forbidden = forbidDemo(locals, 'connectBank');
+		if (forbidden) return forbidden;
 		const form = await request.formData();
 		const setupToken = String(form.get('setupToken') ?? '').trim();
 		if (!setupToken) {
@@ -61,6 +74,8 @@ export const actions: Actions = {
 
 	disconnectBank: async ({ locals }) => {
 		requireUser(locals);
+		const forbidden = forbidDemo(locals, 'connectBank');
+		if (forbidden) return forbidden;
 		await disconnectBank(dataUserId(locals));
 	},
 
@@ -97,6 +112,8 @@ export const actions: Actions = {
 
 	save: async ({ locals, request }) => {
 		requireUser(locals);
+		const forbidden = forbidDemo(locals, 'save');
+		if (forbidden) return forbidden;
 		const form = await request.formData();
 		const parsed = parseReminderEmails(String(form.get('reminderEmails') ?? ''));
 		if ('error' in parsed) return fail(400, { intent: 'save', error: parsed.error });
@@ -106,6 +123,8 @@ export const actions: Actions = {
 
 	addShare: async ({ locals, request }) => {
 		const user = requireUser(locals);
+		const forbidden = forbidDemo(locals, 'share');
+		if (forbidden) return forbidden;
 		if (locals.sharedBy) return fail(403, { intent: 'share', error: 'Only the owner can share' });
 		const form = await request.formData();
 		const email = String(form.get('email') ?? '')
@@ -126,6 +145,8 @@ export const actions: Actions = {
 
 	removeShare: async ({ locals, request }) => {
 		const user = requireUser(locals);
+		const forbidden = forbidDemo(locals, 'share');
+		if (forbidden) return forbidden;
 		const form = await request.formData();
 		const id = Number(form.get('shareId'));
 		if (!Number.isInteger(id)) return fail(400, { intent: 'share', error: 'Invalid share' });
