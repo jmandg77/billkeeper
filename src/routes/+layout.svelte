@@ -3,7 +3,12 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { appName } from '$lib/appName';
 	import { authClient } from '$lib/auth-client';
+
+	// The default name keeps its two-tone wordmark; custom names render plain.
+	const nameParts =
+		appName === 'billkeeper' ? { head: 'bill', tail: 'keeper' } : { head: appName, tail: '' };
 
 	let { data, children } = $props();
 
@@ -23,7 +28,7 @@
 				href={data.user ? resolve('/bills') : resolve('/')}
 				class="text-xl font-bold tracking-tight"
 			>
-				bill<span class="text-indigo-600">keeper</span>
+				{nameParts.head}<span class="text-indigo-600">{nameParts.tail}</span>
 			</a>
 			{#if data.user}
 				<div class="flex items-center gap-4">

@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private';
+import { appName } from '$lib/appName';
 import { formatCents } from '$lib/domain/money';
 import { reminderDueOn } from '$lib/domain/reminders';
 import { ensureMonthSeeded } from './bills';
@@ -99,8 +100,8 @@ async function sendReminderEmail(to: string[], reminders: Reminder[]): Promise<b
 	});
 	const subject =
 		reminders.length === 1
-			? `billkeeper: ${reminders[0].title} is due ${reminders[0].dueDate}`
-			: `billkeeper: ${reminders.length} bills coming due`;
+			? `${appName}: ${reminders[0].title} is due ${reminders[0].dueDate}`
+			: `${appName}: ${reminders.length} bills coming due`;
 	const appUrl = env.ORIGIN || 'https://billkeeper-six.vercel.app';
 	const text = `${lines.join('\n')}\n\n${appUrl}/bills/${reminders[0].month}`;
 
@@ -111,7 +112,7 @@ async function sendReminderEmail(to: string[], reminders: Reminder[]): Promise<b
 			'content-type': 'application/json'
 		},
 		body: JSON.stringify({
-			from: env.EMAIL_FROM || 'billkeeper <onboarding@resend.dev>',
+			from: env.EMAIL_FROM || `${appName} <onboarding@resend.dev>`,
 			to,
 			subject,
 			text

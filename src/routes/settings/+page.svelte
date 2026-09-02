@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import { appName } from '$lib/appName';
 	import { formatCents } from '$lib/domain/money';
 
 	let { data, form } = $props();
@@ -34,7 +35,7 @@
 	let syncing = $state(false);
 </script>
 
-<svelte:head><title>Settings — billkeeper</title></svelte:head>
+<svelte:head><title>Settings — {appName}</title></svelte:head>
 
 <div class="mx-auto max-w-xl">
 	<div class="mb-6 flex items-center justify-between">
