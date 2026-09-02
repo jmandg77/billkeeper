@@ -60,26 +60,6 @@ export async function syncMonth(userId: string, month: string): Promise<SyncOutc
 		});
 	}
 
-	// Linked bills take their amount from the account balance — unpaid ones
-	// only (a card paid off this month keeps the amount it was paid at), and
-	// not ones whose amount the user set by hand this month.
-	const linkedBills = await db.bill.findMany({
-		where: {
-			userId,
-			linkedAccountId: { not: null },
-			payments: { some: { month, paid: false, amountOverriddenAt: null } }
-		},
-		select: { id: true, linkedAccountId: true }
-	});
-	for (const bill of linkedBills) {
-		const cents = balances.get(bill.linkedAccountId!);
-		if (cents === undefined) continue;
-		await db.bill.update({
-			where: { id: bill.id },
-			data: { minPaymentCents: Math.abs(cents) }
-		});
-	}
-
 	const unpaidBills = await db.bill.findMany({
 		where: {
 			userId,

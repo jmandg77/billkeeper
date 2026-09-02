@@ -227,7 +227,7 @@
 			<h2 class="font-semibold">Synced accounts</h2>
 			<p class="mt-1 text-sm text-gray-500">
 				Accounts your bank connection shares, refreshed on every sync. Link a bill to one (in the
-				bill's edit form) and its amount follows the account balance.
+				bill's edit form) to see the account's balance under the bill's amount.
 			</p>
 			<ul class="mt-3 divide-y divide-gray-100">
 				{#each data.syncedAccounts as account (account.accountId)}

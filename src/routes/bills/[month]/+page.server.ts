@@ -52,13 +52,13 @@ export const actions: Actions = {
 
 	update: async ({ locals, params, request }) => {
 		const user = requireUser(locals);
-		const month = requireMonth(params);
+		requireMonth(params);
 		const form = await request.formData();
 		const billId = Number(form.get('billId'));
 		if (!Number.isInteger(billId)) return invalidBill('update');
 		const { data, errors } = parseBillForm(form);
 		if (!data) return fail(400, { intent: 'update', errors });
-		await bills.updateBill(user.id, billId, month, data);
+		await bills.updateBill(user.id, billId, data);
 	},
 
 	setAmount: async ({ locals, params, request }) => {
@@ -75,7 +75,7 @@ export const actions: Actions = {
 				errors: { amount: 'Enter an amount like 42.50' } as FormErrors
 			});
 		}
-		await bills.setBillAmount(user.id, billId, month, amountCents);
+		await bills.setBillAmount(user.id, billId, amountCents);
 	},
 
 	delete: async ({ locals, request }) => {

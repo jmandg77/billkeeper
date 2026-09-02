@@ -89,7 +89,7 @@ model Bill {
   minPaymentCents Int?
   payUrl          String? // https link to the biller's payment page
   notifyDaysBefore Int? // remind this many days before dueDay; null = off
-  linkedAccountId  String? // bank account whose balance becomes this bill's amount on sync
+  linkedAccountId  String? // bank account whose current balance is shown under this bill's amount
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   payments        Payment[]
@@ -106,9 +106,6 @@ model Payment {
   paidAt       DateTime?
   matchedTxnId String? // bank transaction that marked this paid, when synced
   notifiedAt   DateTime? // due-reminder sent for this month
-  // A manually set amount on a linked bill holds for this month; sync stops
-  // overwriting it until the next month starts fresh.
-  amountOverriddenAt DateTime?
   createdAt    DateTime  @default(now())
 
   @@unique([billId, month])

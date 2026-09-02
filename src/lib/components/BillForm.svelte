@@ -93,13 +93,13 @@
 
 	{#if accounts.length > 0}
 		<div>
-			<label class="block text-sm font-medium" for="linkedAccountId"> Amount from account </label>
+			<label class="block text-sm font-medium" for="linkedAccountId"> Linked account </label>
 			<select
 				id="linkedAccountId"
 				name="linkedAccountId"
 				class="mt-1 w-full rounded-md border-gray-300 text-sm"
 			>
-				<option value="">Fixed amount</option>
+				<option value="">None</option>
 				{#each accounts as account (account.accountId)}
 					<option value={account.accountId} selected={account.accountId === bill?.linkedAccountId}>
 						{account.name}{account.orgName ? ` — ${account.orgName}` : ''}
@@ -107,8 +107,8 @@
 				{/each}
 			</select>
 			<p class="mt-1 text-xs text-gray-400">
-				Sync keeps this bill's amount at the account balance while unpaid — until you set an amount
-				yourself, which holds for the rest of the month.
+				Shows the account's current balance under this bill's amount. The amount itself stays
+				whatever you set.
 			</p>
 		</div>
 	{/if}
