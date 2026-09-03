@@ -4,8 +4,8 @@ import { currentMonth, previousMonth } from '$lib/domain/month';
 import { db } from './db';
 
 // A bill belongs to a month when it has a Payment row for that month.
-// Months are materialized lazily: viewing an empty month copies the bills
-// that existed in the previous month as unpaid payments.
+// The current month materializes lazily with every bill unpaid — a bill
+// stays in play until deleted. Past months are history and never change.
 
 export async function listMonth(userId: string, month: string): Promise<BillView[]> {
 	await ensureMonthSeeded(userId, month);
@@ -37,18 +37,16 @@ export async function listMonth(userId: string, month: string): Promise<BillView
 }
 
 export async function ensureMonthSeeded(userId: string, month: string): Promise<void> {
-	if (month > currentMonth()) return; // don't materialize future months on view
+	// Current month, or next month so reminder windows can cross the boundary.
+	if (month !== currentMonth() && previousMonth(month) !== currentMonth()) return;
 	const existing = await db.payment.count({ where: { month, bill: { userId } } });
 	if (existing > 0) return;
 
-	const previousBills = await db.bill.findMany({
-		where: { userId, payments: { some: { month: previousMonth(month) } } },
-		select: { id: true }
-	});
-	if (previousBills.length === 0) return;
+	const bills = await db.bill.findMany({ where: { userId }, select: { id: true } });
+	if (bills.length === 0) return;
 
 	await db.payment.createMany({
-		data: previousBills.map((bill) => ({ billId: bill.id, month })),
+		data: bills.map((bill) => ({ billId: bill.id, month })),
 		skipDuplicates: true
 	});
 }

@@ -47,7 +47,8 @@ swapping is a contained change — a capable AI coding assistant can do it from 
 
 **Bills**
 
-- **Monthly rollover** — viewing a new month copies last month's bills in as unpaid
+- **Monthly rollover** — each new month starts with every bill unpaid; a bill stays in play
+  until you delete it
 - **Three sections** — To pay, Autopay, and Paid (everything settled sinks to the bottom),
   sortable by due date or A–Z
 - **Inline amounts** — click an unpaid bill's amount to edit it in place
