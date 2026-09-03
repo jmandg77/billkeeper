@@ -36,7 +36,7 @@
 			{ title: 'To pay', bills: sortBills(toPay, sortMode) },
 			{ title: 'Autopay', bills: sortBills(autopay, sortMode) },
 			{ title: 'Paid', bills: sortBills(paid, sortMode) }
-		].filter((s) => s.bills.length > 0);
+		].filter((s) => s.bills.length > 0 || s.title === 'Paid');
 	});
 	const balanceError = $derived(form?.intent === 'budget' ? form.errors?.balance : undefined);
 	const syncError = $derived(
@@ -135,16 +135,20 @@
 				>
 					{section.title}
 				</h3>
-				<ul class="space-y-3">
-					{#each section.bills as bill (bill.id)}
-						<BillRow
-							{bill}
-							month={data.month}
-							amountError={amountErrorFor(bill.id)}
-							onedit={(b) => (editingBill = b)}
-						/>
-					{/each}
-				</ul>
+				{#if section.bills.length === 0}
+					<p class="text-sm text-gray-400">Nothing paid this month</p>
+				{:else}
+					<ul class="space-y-3">
+						{#each section.bills as bill (bill.id)}
+							<BillRow
+								{bill}
+								month={data.month}
+								amountError={amountErrorFor(bill.id)}
+								onedit={(b) => (editingBill = b)}
+							/>
+						{/each}
+					</ul>
+				{/if}
 			{/each}
 		{/if}
 		<a
