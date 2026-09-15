@@ -1,4 +1,3 @@
-import { createLocalAccountIssuer } from '@better-auth/core/db';
 import { hashPassword } from 'better-auth/crypto';
 import { currentMonth, previousMonth } from '../domain/month';
 import type { PrismaClient } from './generated/client';
@@ -27,7 +26,6 @@ export async function ensureDemoUser(db: PrismaClient, creds: DemoCredentials): 
 					id: crypto.randomUUID(),
 					accountId: userId,
 					providerId: 'credential',
-					issuer: createLocalAccountIssuer('credential'),
 					password: await hashPassword(creds.password),
 					createdAt: now,
 					updatedAt: now
